@@ -1,0 +1,142 @@
+---
+title: "The cattle immunoglobin loci of IGK region"
+author: "wujiaqi"
+date: "2022-12-26"
+output: html_document
+---
+
+```{r}
+suppressMessages(library(trackViewer)) 
+suppressMessages(library(data.table))
+suppressMessages(library(RColorBrewer))
+suppressMessages(library(Gviz))
+suppressMessages(library(BSgenome.Hsapiens.UCSC.hg19))
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "/home/wujiaqi/data/cow/")
+```
+
+## Figure 2D - AUS-UCD IGK gene loci (with gene name)
+
+```{r}
+## IGK region
+IGK_region <- as.data.frame(fread("./newData_20220115/geneloci/IGK_ARS_UCD1.2_gene_loci_clean.csv"))
+IGK_region$`IMGT label positions` <- apply(IGK_region, 1, function(x){gsub(">", "", x[7])})
+IGK_region$`IMGT label positions` <- apply(IGK_region, 1, function(x){gsub("<", "", x[7])})
+IGK_region$`IMGT label positions` <- apply(IGK_region, 1, function(x){gsub("complement\\(", "", x[7])})
+IGK_region$`IMGT label positions` <- apply(IGK_region, 1, function(x){gsub("\\)", "", x[7])})
+
+IGK_region$`chr label positions` <- apply(IGK_region, 1, function(x){gsub("complement\\(", "", x[11])})
+IGK_region$`chr label positions` <- apply(IGK_region, 1, function(x){gsub("\\)", "", x[11])})
+
+IGK_region$start <- apply(IGK_region, 1, function(x){as.integer(strsplit(x[7],split = "\\..")[[1]][1])})
+IGK_region$end <- apply(IGK_region, 1, function(x){as.integer(strsplit(x[7],split = "\\..")[[1]][2])})
+IGK_region$location <- round(0.5*(IGK_region$start+IGK_region$end))
+
+IGK_region$`IMGT allele name and Functionality` <- apply(IGK_region, 1, function(x){strsplit(x[4], split = " ")[[1]][2]})
+colnames(IGK_region)[4] <- "functionality"
+
+## 1、IGK allel graph
+IGK_gr <- GRanges("IGK", IRanges(IGK_region$location, width = 1, names = IGK_region$`IMGT gene name`))
+# IGK_gr <- GRanges("IGK", IRanges(-1, width = 1))
+features_IGK <- GRanges("IGK", IRanges(start = 0, end = 47315607-47101702))
+
+features_IGK$fill <- c("#CE896A")
+features_IGK$color <- c("#CE896A")
+features_IGK$height <- c(0.04)
+
+IGK_gr$SNPsideID <- "top"
+features_IGK_mul <- GRanges("IGK", IRanges(start = c(0,IGK_region$start),
+                                           end = c(47315607-47101702,IGK_region$end)))
+
+table(IGK_region$functionality)
+IGK_region$color <- NA
+IGK_region$color[IGK_region$functionality %in% "F"] <- "#c93f55"
+IGK_region$color[IGK_region$functionality %in% "ORF"] <- "#ffcd12"
+IGK_region$color[IGK_region$functionality %in% "P"] <- "#208cc0"
+IGK_region$color[IGK_region$functionality %in% "" | IGK_region$functionality %in% NA] <- "#828282"
+
+IGK_allel_num <- nrow(IGK_region)
+features_IGK_mul$fill <- c("#BFBFBF",IGK_region$color)
+features_IGK_mul$color <- c("#BFBFBF",IGK_region$color)
+features_IGK_mul$height <- rep(0.04, length(features_IGK_mul))
+# features_IGK_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_IGK_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.IGK.allel"), c(1,IGK_allel_num))
+names(features_IGK_mul) <- rep(c("contig","IGK allel"),c(1,IGK_allel_num))
+# x <- lolliplot(IGK_gr, features_IGK_mul, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(0,50000,100000,150000,200000)
+names(xaxis_tmp) <- c("47.1Mb","47.15Mb","47.2Mb","47.25Mb","47.3Mb")
+x <- lolliplot(IGK_gr, features_IGK_mul, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+```
+
+
+## Figure 2D - NCBA 1.0 IGK gene loci (with gene name)
+
+```{r}
+## IGK
+IGK_region <- as.data.frame(fread("./newData_20220115/IGK/IGK_mapResults_clean_new.csv"))
+IGK_region$location <- IGK_region$start+round(0.5*IGK_region$length)
+
+## 1、IGK allel graph
+IGK_gr <- GRanges("IGK", IRanges(IGK_region$location, width = 1, names = IGK_region$annotation))
+features_IGK <- GRanges("IGK", IRanges(start = 0, end = 47500000-47100000))
+
+features_IGK$fill <- c("#6D8D7D")
+features_IGK$color <- c("#6D8D7D")
+features_IGK$height <- c(0.04)
+
+IGK_gr$SNPsideID <- "top"
+features_IGK_mul <- GRanges("IGK", IRanges(start = c(0,IGK_region$start),
+                                           end = c(47500000-47100000,IGK_region$star+IGK_region$length)))
+table(IGK_region$functionality)
+IGK_region$color <- NA
+IGK_region$color[IGK_region$functionality %in% "F"] <- "#c93f55"
+IGK_region$color[IGK_region$functionality %in% "ORF"] <- "#ffcd12"
+IGK_region$color[IGK_region$functionality %in% "P"] <- "#208cc0"
+IGK_region$color[IGK_region$functionality %in% "" | IGK_region$functionality %in% NA] <- "#828282"
+
+IGK_allel_num <- nrow(IGK_region)
+features_IGK_mul$fill <- c("#828282",IGK_region$color)
+features_IGK_mul$color <- c("#828282",IGK_region$color)
+features_IGK_mul$height <- rep(0.04, length(features_IGK_mul))
+# features_IGK_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_IGK_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.IGK.allel"), c(1,IGK_allel_num))
+names(features_IGK_mul) <- rep(c("contig","IGK allel"),c(1,IGK_allel_num))
+# x <- lolliplot(IGK_gr, features_IGK_mul, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(0,100000,200000,300000,400000)
+names(xaxis_tmp) <- c("47.1Mb","47.2Mb","47.3Mb","47.4Mb","47.5Mb")
+x <- lolliplot(IGK_gr, features_IGK_mul, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+```
+
+
+## Figure 2D - NCBA 1.0 IGK alignment (read length > 100kb)
+
+```{r}
+options(ucscChromosomeNames=FALSE)
+gTrack <- GenomeAxisTrack(cex = 1)
+chr11_igk_allel_loci <- as.data.frame(fread("./newData_20220115/chrContigloci.csv"))
+chr11_igk_allel_loci[11,]
+
+color_tmp <- list(c("#749e89","#c399a2"))
+
+chrom <- "ctg000016_np12121212"
+afrom <- 107542840-47500000
+ato <- 107542840-47100000
+alTrack <- Gviz:::.import.bam.alignments("/home/share/litt/proj/cow/results/longAlignment/contigs/ont_ctg_immuno_loci_100kb.bam", GRanges(chrom, IRanges(afrom, ato)))
+alTrack <- AlignmentsTrack(sort(alTrack))
+plotTracks(c(gTrack, alTrack), chromosome = "ctg000016_np12121212", from = afrom, to = ato, 
+             fill.reads=color_tmp[[1]][as.numeric(sort(ranges(alTrack)$readStrand))],
+             # col.reads="white", 
+             col.reads=NA, 
+             alpha.reads=1)
+    
+```
+

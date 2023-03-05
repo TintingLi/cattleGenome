@@ -1,0 +1,129 @@
+---
+title: "The cattle immunoglobin loci of IGH region"
+author: "wujiaqi"
+date: "2022-12-26"
+output: html_document
+---
+
+```{r}
+suppressMessages(library(trackViewer)) 
+suppressMessages(library(data.table))
+suppressMessages(library(RColorBrewer))
+suppressMessages(library(Gviz))
+suppressMessages(library(BSgenome.Hsapiens.UCSC.hg19))
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "/home/wujiaqi/data/cow/")
+```
+
+## Figure 2A - KT723008 IGH gene loci
+
+```{r}
+## IGH region
+IGH_region <- as.data.frame(fread("./newData_20220115/geneloci/IGH_KT723008_geneloci_clean.csv"))
+IGH_region$start <- apply(IGH_region, 1, function(x){as.integer(strsplit(x[5],split = "\\..")[[1]][1])})
+IGH_region$end <- apply(IGH_region, 1, function(x){as.integer(strsplit(x[5],split = "\\..")[[1]][2])})
+IGH_region$location <- round(0.5*(IGH_region$start+IGH_region$end))
+
+## 1、IGH allel graph
+IGH_gr <- GRanges("IGH", IRanges(IGH_region$location, width = 1, names = IGH_region$imgt_gene_name))
+# IGH_gr <- GRanges("IGH", IRanges(-1, width = 1))
+features_IGH <- GRanges("IGH", IRanges(start = 0, end = 68414741-67750912))  
+# lolliplot(IGH_gr, features_IGH, xaxis = F)
+
+features_IGH$fill <- c("#BFBFBF")
+features_IGH$color <- c("#BFBFBF")
+features_IGH$height <- c(0.04)
+
+IGH_gr$SNPsideID <- "top"
+features_IGH_mul <- GRanges("IGH", IRanges(start = c(0,IGH_region$start),
+                                           end = c(68414741-67750912,IGH_region$end)))
+IGH_region$color <- NA
+IGH_region$color[IGH_region$functionality %in% "F"] <- "#c93f55"
+IGH_region$color[IGH_region$functionality %in% "ORF"] <- "#ffcd12"
+IGH_region$color[IGH_region$functionality %in% "P"] <- "#208cc0"
+IGH_region$color[IGH_region$functionality %in% "" | IGH_region$functionality %in% NA] <- "#828282"
+
+IGH_allel_num <- nrow(IGH_region)
+features_IGH_mul$fill <- c("#BFBFBF",IGH_region$color)
+features_IGH_mul$color <- c("#BFBFBF",IGH_region$color)
+features_IGH_mul$height <- rep(0.04, length(features_IGH_mul))
+# features_IGH_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_IGH_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.IGH.allel"), c(1,IGH_allel_num))
+names(features_IGH_mul) <- rep(c("contig","IGH allel"),c(1,IGH_allel_num))
+# x <- lolliplot(IGH_gr, features_IGH_mul, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(0,100000,200000,300000,400000,500000,600000)
+names(xaxis_tmp) <- c("0Mb","0.1Mb","0.2Mb","0.3Mb","0.4Mb","0.5Mb","0.6Mb")
+x <- lolliplot(IGH_gr, features_IGH_mul, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+```
+
+## Figure 2A - NCBA 1.0 IGH gene loci
+
+```{r}
+## IGH region
+IGH_region <- as.data.frame(fread("./newData_20220115/IGH/IGH_manuallyChecked.txt", fill = T))
+IGH_region <- IGH_region[IGH_region$gene != "",]
+IGH_region$location <- IGH_region$start+round(0.5*IGH_region$length)
+
+
+## 1、IGH allel graph
+IGH_gr <- GRanges("IGH", IRanges(IGH_region$location, width = 1, names = IGH_region$annotation))
+features_IGH <- GRanges("IGH", IRanges(start = 0, end = 68414741-67750912))
+
+features_IGH$fill <- c("#285C90")
+features_IGH$color <- c("#285C90")
+features_IGH$height <- c(0.04)
+
+
+IGH_gr$SNPsideID <- "top"
+features_IGH_mul <- GRanges("IGH", IRanges(start = c(0,IGH_region$start),
+                                           end = c(68414741-67750912,IGH_region$start+IGH_region$length)))
+table(IGH_region$functionality)
+IGH_region$color <- NA
+IGH_region$color[IGH_region$functionality %in% "F"] <- "#c93f55"
+IGH_region$color[IGH_region$functionality %in% "ORF"] <- "#ffcd12"
+IGH_region$color[IGH_region$functionality %in% "P"] <- "#208cc0"
+IGH_region$color[IGH_region$functionality %in% "" | IGH_region$functionality %in% NA] <- "#828282"
+
+IGH_allel_num <- nrow(IGH_region)
+features_IGH_mul$fill <- c("#828282",IGH_region$color)
+features_IGH_mul$color <- c("#828282",IGH_region$color)
+features_IGH_mul$height <- rep(0.04, length(features_IGH_mul))
+
+features_IGH_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.IGH.allel"), c(1,IGH_allel_num))
+names(features_IGH_mul) <- rep(c("contig","IGH allel"),c(1,IGH_allel_num))
+# x <- lolliplot(IGH_gr, features_IGH_mul, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(0,100000,200000,300000,400000,500000,600000)
+names(xaxis_tmp) <- c("70.67Mb","70.57Mb","70.47Mb","70.37Mb","70.27Mb","70.17Mb","70.07Mb")
+x <- lolliplot(IGH_gr, features_IGH_mul, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+```
+
+
+## Figure 2A - NCBA 1.0 IGH alignment
+
+```{r}
+sTrack <- SequenceTrack(Hsapiens)
+options(ucscChromosomeNames=FALSE)
+gTrack <- GenomeAxisTrack(cex = 1)
+
+chr21_igh_allel_loci <- as.data.frame(fread("./newData_20220115/chrContigloci.csv"))
+
+color_tmp <- list(c("#749e89","#c399a2"))
+chrom <- "chr21"
+afrom <- 67750912+2258262
+ato <- 68414741+2258262
+alTrack <- Gviz:::.import.bam.alignments("./ultraLong_read_alignment/IGH_new/ont_ctg000114_ultraLong_100k_read_maping_to_chr21_sorted.bam", GRanges(chrom, IRanges(afrom, ato)))
+alTrack <- AlignmentsTrack(sort(alTrack))
+plotTracks(c(gTrack, alTrack), chromosome = "chr21", from = afrom, to = ato, 
+           fill.reads=color_tmp[[1]][as.numeric(sort(ranges(alTrack)$readStrand))],
+           # col.reads="white", 
+           col.reads=NA, 
+           alpha.reads=1)
+```
+

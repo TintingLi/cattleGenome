@@ -1,0 +1,300 @@
+---
+title: "The cattle immunoglobin loci of IGL region"
+author: "wujiaqi"
+date: "2022-12-26"
+output: html_document
+---
+
+```{r}
+suppressMessages(library(trackViewer)) 
+suppressMessages(library(data.table))
+suppressMessages(library(RColorBrewer))
+suppressMessages(library(Gviz))
+suppressMessages(library(BSgenome.Hsapiens.UCSC.hg19))
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "/home/wujiaqi/data/cow/")
+```
+
+## Figure 2C - AUS-UCD IGL gene loci (without gene name)
+
+```{r}
+## IGL
+IGL_region <- as.data.frame(fread("./newData_20220115/geneloci/IGL_ARS_UCD1.2_gene_loci_clean.csv"))
+IGL_region$`IMGT label positions` <- apply(IGL_region, 1, function(x){gsub(">", "", x[7])})
+IGL_region$`IMGT label positions` <- apply(IGL_region, 1, function(x){gsub("<", "", x[7])})
+IGL_region$`IMGT label positions` <- apply(IGL_region, 1, function(x){gsub("complement\\(", "", x[7])})
+IGL_region$`IMGT label positions` <- apply(IGL_region, 1, function(x){gsub("\\)", "", x[7])})
+
+IGL_region$`chr label positions` <- apply(IGL_region, 1, function(x){gsub("complement\\(", "", x[11])})
+IGL_region$`chr label positions` <- apply(IGL_region, 1, function(x){gsub("\\)", "", x[11])})
+
+IGL_region$start <- apply(IGL_region, 1, function(x){as.integer(strsplit(x[7],split = "\\..")[[1]][1])})
+IGL_region$end <- apply(IGL_region, 1, function(x){as.integer(strsplit(x[7],split = "\\..")[[1]][2])})
+IGL_region$location <- round(0.5*(IGL_region$start+IGL_region$end))
+
+IGL_region$`IMGT allele name and Functionality` <- apply(IGL_region, 1, function(x){strsplit(x[4], split = " ")[[1]][2]})
+colnames(IGL_region)[4] <- "functionality"
+
+
+## 1、IGL allel graph
+# IGL_gr <- GRanges("IGL", IRanges(IGL_region$location, width = 1, names = IGL_region$`IMGT gene name`))
+IGL_gr <- GRanges("IGL", IRanges(-1, width = 1))
+features_IGL <- GRanges("IGL", IRanges(start = 0, end = 71188548-70665574))
+
+features_IGL$fill <- c("#CE896A")
+features_IGL$color <- c("#CE896A")
+features_IGL$height <- c(0.04)
+
+
+IGL_gr$SNPsideID <- "top"
+features_IGL_mul <- GRanges("IGL", IRanges(start = c(0,IGL_region$start),
+                                           end = c(71188548-70665574,IGL_region$end)))
+
+table(IGL_region$functionality)
+IGL_region$color <- NA
+IGL_region$color[IGL_region$functionality %in% "F"] <- "#c93f55"
+IGL_region$color[IGL_region$functionality %in% "ORF"] <- "#ffcd12"
+IGL_region$color[IGL_region$functionality %in% "P"] <- "#208cc0"
+IGL_region$color[IGL_region$functionality %in% "" | IGL_region$functionality %in% NA] <- "#828282"
+
+IGL_allel_num <- nrow(IGL_region)
+features_IGL_mul$fill <- c("#BFBFBF",IGL_region$color)
+features_IGL_mul$color <- c("#BFBFBF",IGL_region$color)
+features_IGL_mul$height <- rep(0.04, length(features_IGL_mul))
+# features_IGL_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_IGL_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.IGL.allel"), c(1,IGL_allel_num))
+names(features_IGL_mul) <- rep(c("contig","IGL allel"),c(1,IGL_allel_num))
+# x <- lolliplot(IGL_gr, features_IGL_mul, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(0,100000,200000,300000,400000,500000)
+names(xaxis_tmp) <- c("70.67Mb","70.77Mb","70.87Mb","70.97Mb","71.07Mb","71.17Mb")
+x <- lolliplot(IGL_gr, features_IGL_mul, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+```
+
+## Figure 2C - AUS-UCD IGL gene loci (with gene name)
+
+
+```{r}
+## 1、IGL allel graph
+IGL_gr <- GRanges("IGL", IRanges(IGL_region$location, width = 1, names = IGL_region$`IMGT gene name`))
+# IGL_gr <- GRanges("IGL", IRanges(-1, width = 1))
+features_IGL <- GRanges("IGL", IRanges(start = 0, end = 71188548-70665574))
+
+features_IGL$fill <- c("#CE896A")
+features_IGL$color <- c("#CE896A")
+features_IGL$height <- c(0.04)
+
+IGL_gr$SNPsideID <- "top"
+features_IGL_mul <- GRanges("IGL", IRanges(start = c(0,IGL_region$start),
+                                           end = c(71188548-70665574,IGL_region$end)))
+
+table(IGL_region$functionality)
+IGL_region$color <- NA
+IGL_region$color[IGL_region$functionality %in% "F"] <- "#c93f55"
+IGL_region$color[IGL_region$functionality %in% "ORF"] <- "#ffcd12"
+IGL_region$color[IGL_region$functionality %in% "P"] <- "#208cc0"
+IGL_region$color[IGL_region$functionality %in% "" | IGL_region$functionality %in% NA] <- "#828282"
+
+IGL_allel_num <- nrow(IGL_region)
+features_IGL_mul$fill <- c("#BFBFBF",IGL_region$color)
+features_IGL_mul$color <- c("#BFBFBF",IGL_region$color)
+features_IGL_mul$height <- rep(0.04, length(features_IGL_mul))
+# features_IGL_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_IGL_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.IGL.allel"), c(1,IGL_allel_num))
+names(features_IGL_mul) <- rep(c("contig","IGL allel"),c(1,IGL_allel_num))
+# x <- lolliplot(IGL_gr, features_IGL_mul, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(0,100000,200000,300000,400000,500000)
+names(xaxis_tmp) <- c("70.67Mb","70.77Mb","70.87Mb","70.97Mb","71.07Mb","71.17Mb")
+x <- lolliplot(IGL_gr, features_IGL_mul, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+```
+
+## Figure 2C - NCBA 1.0 IGL gene loci (without gene name)
+
+```{r}
+IGL_region_2 <- as.data.frame(fread("./newData_20220115/IGL/IGL_mapResults-20220130_cleanup.csv"))
+IGL_region_2$location <- IGL_region_2$start+round(0.5*IGL_region_2$length)
+
+## 1、IGL allel graph
+IGL_gr <- GRanges("IGL", IRanges(-1, width = 1))
+features_IGL <- GRanges("IGL", IRanges(start = 0, end = 72700000-72000000))
+
+features_IGL$fill <- c("#CE896A")
+features_IGL$color <- c("#CE896A")
+features_IGL$height <- c(0.04)
+
+IGL_gr$SNPsideID <- "top"
+features_IGL_mul <- GRanges("IGL", IRanges(start = c(0,IGL_region_2$start),
+                                           end = c(72700000-72000000,IGL_region_2$start+IGL_region_2$length)))
+table(IGL_region_2$functionality)
+IGL_region_2$color <- NA
+IGL_region_2$color[IGL_region_2$functionality %in% "F"] <- "#c93f55"
+IGL_region_2$color[IGL_region_2$functionality %in% "ORF"] <- "#ffcd12"
+IGL_region_2$color[IGL_region_2$functionality %in% "P"] <- "#208cc0"
+IGL_region_2$color[IGL_region_2$functionality %in% "" | IGL_region_2$functionality %in% NA] <- "#828282"
+
+IGL_allel_num <- nrow(IGL_region_2)
+# features_IGL_mul$fill <- rep(c("#44435F","#CE896A"), c(IGL_allel_num,1))
+# features_IGL_mul$color <- rep(c("#44435F","#CE896A"), c(IGL_allel_num,1))
+features_IGL_mul$fill <- c("#44435F",IGL_region_2$color)
+features_IGL_mul$color <- c("#44435F",IGL_region_2$color)
+features_IGL_mul$height <- rep(0.04, length(features_IGL_mul))
+# features_IGL_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_IGL_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.IGL.allel"), c(1,IGL_allel_num))
+names(features_IGL_mul) <- rep(c("contig","IGL allel"),c(1,IGL_allel_num))
+# x <- lolliplot(IGL_gr, features_IGL_mul, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(0,100000,200000,300000,400000,500000,600000,700000)
+names(xaxis_tmp) <- c("72Mb","72.1Mb","72.2Mb","72.3Mb","72.4Mb","72.5Mb","72.6Mb","72.7Mb")
+x <- lolliplot(IGL_gr, features_IGL_mul, cex = 0.6, yaxis = F, ylab = F,xaxis = xaxis_tmp)
+
+```
+
+
+## Figure 2C - NCBA 1.0 IGL gene loci (with gene name)
+
+```{r}
+IGL_region_2 <- as.data.frame(fread("./newData_20220115/IGL/IGL_mapResults-20220130_cleanup.csv"))
+IGL_region_2$location <- IGL_region_2$start+round(0.5*IGL_region_2$length)
+
+## 1、IGL allel graph
+IGL_gr <- GRanges("IGL", IRanges(IGL_region_2$location, width = 1, names = IGL_region_2$annotation))
+features_IGL <- GRanges("IGL", IRanges(start = 0, end = 72700000-72000000))
+
+features_IGL$fill <- c("#CE896A")
+features_IGL$color <- c("#CE896A")
+features_IGL$height <- c(0.04)
+
+
+IGL_gr$SNPsideID <- "top"
+features_IGL_mul <- GRanges("IGL", IRanges(start = c(0,IGL_region_2$start),
+                                           end = c(72700000-72000000,IGL_region_2$start+IGL_region_2$length)))
+table(IGL_region_2$functionality)
+IGL_region_2$color <- NA
+IGL_region_2$color[IGL_region_2$functionality %in% "F"] <- "#c93f55"
+IGL_region_2$color[IGL_region_2$functionality %in% "ORF"] <- "#ffcd12"
+IGL_region_2$color[IGL_region_2$functionality %in% "P"] <- "#208cc0"
+IGL_region_2$color[IGL_region_2$functionality %in% "" | IGL_region_2$functionality %in% NA] <- "#828282"
+
+IGL_allel_num <- nrow(IGL_region_2)
+# features_IGL_mul$fill <- rep(c("#44435F","#CE896A"), c(IGL_allel_num,1))
+# features_IGL_mul$color <- rep(c("#44435F","#CE896A"), c(IGL_allel_num,1))
+features_IGL_mul$fill <- c("#44435F",IGL_region_2$color)
+features_IGL_mul$color <- c("#44435F",IGL_region_2$color)
+features_IGL_mul$height <- rep(0.04, length(features_IGL_mul))
+# features_IGL_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_IGL_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.IGL.allel"), c(1,IGL_allel_num))
+names(features_IGL_mul) <- rep(c("contig","IGL allel"),c(1,IGL_allel_num))
+# x <- lolliplot(IGL_gr, features_IGL_mul, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(0,100000,200000,300000,400000,500000,600000,700000)
+names(xaxis_tmp) <- c("72Mb","72.1Mb","72.2Mb","72.3Mb","72.4Mb","72.5Mb","72.6Mb","72.7Mb")
+x <- lolliplot(IGL_gr, features_IGL_mul, cex = 0.6, yaxis = F, ylab = F,xaxis = xaxis_tmp)
+```
+
+
+## Figure 2C - ARS-UCD IGL gene loci with gap info
+
+```{r}
+IGL_region_2 <- as.data.frame(fread("./newData_20220115/IGL/IGL_mapResults-20220130_cleanup.csv"))
+IGL_region_2$location <- IGL_region_2$start+round(0.5*IGL_region_2$length)
+
+IGL_gr <- GRanges("IGL", IRanges(-1, width = 1))
+features_IGL <- GRanges("IGL", IRanges(start = 0, end = 72700000-72000000))
+
+features_IGL$fill <- c("#CE896A")
+features_IGL$color <- c("#CE896A")
+features_IGL$height <- c(0.04)
+
+gap_info <- as.data.frame(fread("./newData_20220115/ARS_UCD1.2_N_gap_locations.csv"))
+## IGL gap
+gap_info[gap_info$seqnames %in% "chr17" & gap_info$start > 70665574 & gap_info$start < 71188548, "start"]
+IGL_gap_start <- gap_info[gap_info$seqnames %in% "chr17" & gap_info$start > 70665574 & gap_info$start < 71188548, "start"]
+
+
+IGL_gr$SNPsideID <- "top"
+features_IGL_mul <- GRanges("IGL", IRanges(start = c(0,IGL_region_2$start,
+                                                     0,IGL_gap_start-70665574),
+                                           end = c(72700000-72000000,IGL_region_2$start+IGL_region_2$length,
+                                                   522975,IGL_gap_start-70665574+3000)))
+IGL_allel_num <- nrow(IGL_region_2)
+table(IGL_region_2$functionality)
+IGL_region_2$color <- NA
+IGL_region_2$color[IGL_region_2$functionality %in% "F"] <- "#c93f55"
+IGL_region_2$color[IGL_region_2$functionality %in% "ORF"] <- "#ffcd12"
+IGL_region_2$color[IGL_region_2$functionality %in% "P"] <- "#208cc0"
+IGL_region_2$color[IGL_region_2$functionality %in% "" | IGL_region_2$functionality %in% NA] <- "#828282"
+
+IGL_allel_num <- nrow(IGL_region_2)
+# features_IGL_mul$fill <- rep(c("#44435F","#CE896A"), c(IGL_allel_num,1))
+# features_IGL_mul$color <- rep(c("#44435F","#CE896A"), c(IGL_allel_num,1))
+features_IGL_mul$fill <- c("#44435F",IGL_region_2$color,rep(c("#CE896A","#44435F"), c(1,6)))
+features_IGL_mul$color <- c("#44435F",IGL_region_2$color,rep(c("#CE896A","#44435F"), c(1,6)))
+features_IGL_mul$height <- rep(0.04, length(features_IGL_mul))
+# features_IGL_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_IGL_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.IGL.allel","IGL.region","IGL.gap"), c(1,IGL_allel_num,1,6))
+names(features_IGL_mul) <- rep(c("contig","IGL allel","IGL.region","IGL.gap"),c(1,IGL_allel_num,1,6))
+# x <- lolliplot(IGL_gr, features_IGL_mul, cex = 0.6, yaxis = F, ylab = F)
+
+# xaxis_tmp <- c(0,100000,200000,300000,400000,500000,600000,700000)
+# names(xaxis_tmp) <- c("72Mb","72.1Mb","72.2Mb","72.3Mb","72.4Mb","72.5Mb","72.6Mb","72.7Mb")
+# x <- lolliplot(IGL_gr, features_IGL_mul, cex = 0.6, yaxis = F, ylab = F,xaxis = xaxis_tmp)
+
+xaxis_tmp <- c(0,100000,200000,300000,400000,500000)
+names(xaxis_tmp) <- c("70.67Mb","70.77Mb","70.87Mb","70.97Mb","71.07Mb","71.17Mb")
+x <- lolliplot(IGL_gr, features_IGL_mul, cex = 0.6, yaxis = F, ylab = F,xaxis = xaxis_tmp)
+
+```
+
+## Figure 2C - NCBA 1.0 IGL alignment (read length > 100kb)
+
+```{r}
+options(ucscChromosomeNames=FALSE)
+gTrack <- GenomeAxisTrack(cex = 1)
+
+chr17_igl_allel_loci <- as.data.frame(fread("./newData_20220115/chrContigloci.csv"))
+chr17_igl_allel_loci[17,]
+
+
+color_tmp <- list(c("#749e89","#c399a2"))
+
+
+
+chrom <- "ctg000010_np12121212"
+afrom <- 72000000
+ato <- 72412000
+alTrack <- Gviz:::.import.bam.alignments("/home/share/litt/proj/cow/results/longAlignment/contigs/ont_ctg_immuno_loci_100kb.bam", GRanges(chrom, IRanges(afrom, ato)))
+alTrack <- AlignmentsTrack(sort(alTrack))
+plotTracks(c(gTrack, alTrack), chromosome = "ctg000010_np12121212", from = afrom, to = ato, 
+             fill.reads=color_tmp[[1]][as.numeric(sort(ranges(alTrack)$readStrand))],
+             # col.reads="white", 
+             col.reads=NA, 
+             alpha.reads=1)  
+
+chrom <- "ctg000010_np12121212"
+afrom <- 72000000
+ato <- 72700000
+alTrack <- Gviz:::.import.bam.alignments("/home/share/litt/proj/cow/results/longAlignment/contigs/ont_ctg_immuno_loci_100kb_filtered_merge.bam", GRanges(chrom, IRanges(afrom, ato)))
+alTrack <- AlignmentsTrack(sort(alTrack))
+plotTracks(c(gTrack, alTrack), chromosome = "ctg000010_np12121212", from = afrom, to = ato, 
+             fill.reads=color_tmp[[1]][as.numeric(sort(ranges(alTrack)$readStrand))],
+             # col.reads="white", 
+             col.reads=NA, 
+             alpha.reads=1)
+  
+```
+

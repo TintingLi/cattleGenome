@@ -1,0 +1,86 @@
+---
+title: "The cattle immunoglobin loci of NCBA 1.0 IGH region"
+author: "wujiaqi"
+date: "2022-12-26"
+output: html_document
+---
+
+```{r}
+suppressMessages(library(trackViewer)) 
+suppressMessages(library(data.table))
+suppressMessages(library(RColorBrewer))
+suppressMessages(library(Gviz))
+suppressMessages(library(BSgenome.Hsapiens.UCSC.hg19))
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "/home/wujiaqi/data/cow/")
+```
+
+
+## Figure 2B - NCBA 1.0 IGH gene loci
+
+```{r}
+## IGH region
+IGH_region <- as.data.frame(fread("./newData_20220115/IGH/IGH_manuallyChecked.txt", fill = T))
+IGH_region <- IGH_region[IGH_region$gene != "",]
+IGH_region$location <- IGH_region$start+round(0.5*IGH_region$length)
+
+
+## 1、IGH allel graph
+IGH_gr <- GRanges("IGH", IRanges(IGH_region$location, width = 1, names = IGH_region$annotation))
+features_IGH <- GRanges("IGH", IRanges(start = 0, end = 68414741-67750912))
+
+features_IGH$fill <- c("#285C90")
+features_IGH$color <- c("#285C90")
+features_IGH$height <- c(0.04)
+
+
+IGH_gr$SNPsideID <- "top"
+features_IGH_mul <- GRanges("IGH", IRanges(start = c(0,IGH_region$start),
+                                           end = c(68414741-67750912,IGH_region$start+IGH_region$length)))
+table(IGH_region$functionality)
+IGH_region$color <- NA
+IGH_region$color[IGH_region$functionality %in% "F"] <- "#c93f55"
+IGH_region$color[IGH_region$functionality %in% "ORF"] <- "#ffcd12"
+IGH_region$color[IGH_region$functionality %in% "P"] <- "#208cc0"
+IGH_region$color[IGH_region$functionality %in% "" | IGH_region$functionality %in% NA] <- "#828282"
+
+IGH_allel_num <- nrow(IGH_region)
+features_IGH_mul$fill <- c("#828282",IGH_region$color)
+features_IGH_mul$color <- c("#828282",IGH_region$color)
+features_IGH_mul$height <- rep(0.04, length(features_IGH_mul))
+
+features_IGH_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.IGH.allel"), c(1,IGH_allel_num))
+names(features_IGH_mul) <- rep(c("contig","IGH allel"),c(1,IGH_allel_num))
+
+gr <- GRanges("IGH", IRanges(0,170000))
+# x <- lolliplot(IGH_gr, features_IGH_mul, ranges = gr, cex = 0.8, yaxis = F, ylab = T)
+xaxis_tmp <- c(0,50000,100000,150000)
+names(xaxis_tmp) <- c("70.67Mb","70.62Mb","70.57Mb","70.52Mb")
+x <- lolliplot(IGH_gr, features_IGH_mul, ranges = gr, cex = 0.8, yaxis = F, ylab = T, xaxis = xaxis_tmp)
+
+
+gr <- GRanges("IGH", IRanges(170000,340000))
+# x <- lolliplot(IGH_gr, features_IGH_mul, ranges = gr, cex = 0.8, yaxis = F, ylab = T)
+xaxis_tmp <- c(200000,250000,300000)
+names(xaxis_tmp) <- c("70.47Mb","70.42Mb","70.37Mb")
+x <- lolliplot(IGH_gr, features_IGH_mul, ranges = gr, cex = 0.8, yaxis = F, ylab = T, xaxis = xaxis_tmp)
+
+
+gr <- GRanges("IGH", IRanges(340000,510000))
+# x <- lolliplot(IGH_gr, features_IGH_mul, ranges = gr, cex = 0.8, yaxis = F, ylab = T)
+xaxis_tmp <- c(350000,400000,450000,500000)
+names(xaxis_tmp) <- c("70.32Mb","70.27Mb","70.22Mb","70.17Mb")
+x <- lolliplot(IGH_gr, features_IGH_mul, ranges = gr, cex = 0.8, yaxis = F, ylab = T, xaxis = xaxis_tmp)
+
+
+gr <- GRanges("IGH", IRanges(510000,680000))
+# x <- lolliplot(IGH_gr, features_IGH_mul, ranges = gr, cex = 0.8, yaxis = F, ylab = T)
+xaxis_tmp <- c(550000,600000,650000,680000)
+names(xaxis_tmp) <- c("70.12Mb","70.07Mb","70.02Mb","69.99Mb")
+x <- lolliplot(IGH_gr, features_IGH_mul, ranges = gr, cex = 0.8, yaxis = F, ylab = T, xaxis = xaxis_tmp)
+```
+
