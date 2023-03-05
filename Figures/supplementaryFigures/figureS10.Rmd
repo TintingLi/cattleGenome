@@ -1,0 +1,199 @@
+---
+title: "Enlarged alignment map of IGL J-C cluster region and annotation map of IGK locus"
+author: "wujiaqi"
+date: "2022-12-26"
+output: html_document
+---
+
+```{r}
+suppressMessages(library(trackViewer)) 
+suppressMessages(library(data.table))
+suppressMessages(library(RColorBrewer))
+suppressMessages(library(Gviz))
+suppressMessages(library(BSgenome.Hsapiens.UCSC.hg19))
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "/home/wujiaqi/data/cow/")
+```
+
+## Figure S10A - NCBA1.0 and ARS-UCD1.2 IGL J-C-cluster region
+
+```{r}
+IGL_region_2 <- as.data.frame(fread("./newData_20220115/IGL/IGL_mapResults-20220130_cleanup.csv"))
+IGL_region_2$location <- IGL_region_2$start+round(0.5*IGL_region_2$length)
+
+IGL_gr <- GRanges("IGL", IRanges(IGL_region_2$location, width = 1, names = IGL_region_2$annotation))
+features_IGL <- GRanges("IGL", IRanges(start = 0, end = 72700000-72000000))
+
+features_IGL$fill <- c("#CE896A")
+features_IGL$color <- c("#CE896A")
+features_IGL$height <- c(0.04)
+
+IGL_gr$SNPsideID <- "top"
+features_IGL_mul <- GRanges("IGL", IRanges(start = c(0,IGL_region_2$start),
+                                           end = c(72750000-72000000,IGL_region_2$start+IGL_region_2$length)))
+IGL_allel_num <- nrow(IGL_region_2)
+features_IGL_mul$fill <- rep(c("#CE896A","#44435F"), c(1,IGL_allel_num))
+features_IGL_mul$color <- rep(c("#CE896A","#44435F"), c(1,IGL_allel_num))
+features_IGL_mul$height <- rep(0.04, length(features_IGL_mul))
+# features_IGL_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_IGL_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.IGL.allel"), c(1,IGL_allel_num))
+names(features_IGL_mul) <- rep(c("contig","IGL allel"),c(1,IGL_allel_num))
+
+gr <- GRanges("IGL", IRanges(600000,72750000-72000000))
+# x <- lolliplot(IGL_gr, features_IGL_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T)
+xaxis_tmp <- c(600000,620000,640000,660000,680000,700000,720000,740000)
+names(xaxis_tmp) <- c("72.6Mb","72.62Mb","72.64Mb","72.66Mb","72.68Mb","72.70Mb","72.72Mb","72.74Mb")
+x <- lolliplot(IGL_gr, features_IGL_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T, xaxis = xaxis_tmp)
+
+
+
+#### ARS-UCD1.2 gap
+ARS_UCD_IGL <- readxl::read_xlsx("./newData_20220115/IGL/ARS-UCD1.2-IGL-repeat-region.xlsx")
+ARS_UCD_IGL$start <- apply(ARS_UCD_IGL, 1, function(x){as.integer(strsplit(x[10],split = "-")[[1]][1])})
+ARS_UCD_IGL$end <- apply(ARS_UCD_IGL, 1, function(x){as.integer(strsplit(x[10],split = "-")[[1]][2])})
+
+gap_info <- as.data.frame(fread("./newData_20220115/ARS_UCD1.2_N_gap_locations.csv"))
+## IGL gap
+gap_info[gap_info$seqnames %in% "chr17" & gap_info$start > 70665574+min(ARS_UCD_IGL$start) & gap_info$start < 71188548, "start"]
+IGL_gap_start <- gap_info[gap_info$seqnames %in% "chr17" & gap_info$start > 70665574+min(ARS_UCD_IGL$start) & gap_info$start < 71188548, "start"]
+
+###### gene allel
+IGL_gr <- GRanges("IGL", IRanges(ARS_UCD_IGL$start, width = 1, names = ARS_UCD_IGL$`IMGT gene name`))
+
+IGL_gr$SNPsideID <- "top"
+features_IGL_mul <- GRanges("IGL", IRanges(start = c(min(ARS_UCD_IGL$start)-5000,ARS_UCD_IGL$start,
+                                                     IGL_gap_start-70665574),
+                                           end = c(71188548+30000-70665574,ARS_UCD_IGL$end,
+                                                   IGL_gap_start-70665574+1000)))
+IGL_allel_num <- nrow(ARS_UCD_IGL)
+features_IGL_mul$fill <- rep(c("#CE896A","#44435F","#44435F"), c(1,IGL_allel_num,1))
+features_IGL_mul$color <- rep(c("#CE896A","#44435F","#44435F"), c(1,IGL_allel_num,1))
+features_IGL_mul$height <- rep(0.04, length(features_IGL_mul))
+# features_IGL_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_IGL_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.IGL.allel","IGL.gap"), c(1,IGL_allel_num,1))
+names(features_IGL_mul) <- rep(c("contig","IGL allel","IGL.gap"),c(1,IGL_allel_num,1))
+
+gr <- GRanges("IGL", IRanges(min(ARS_UCD_IGL$start)-5000,71188548+30000-70665574))
+# x <- lolliplot(IGL_gr, features_IGL_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T)
+xaxis_tmp <- c(400000,420000,440000,460000,480000,500000,520000,540000)
+names(xaxis_tmp) <- c("71.06Mb","71.08Mb","71.1Mb","71.12Mb","71.14Mb","71.16Mb","71.18Mb","71.2Mb")
+x <- lolliplot(IGL_gr, features_IGL_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T, xaxis = xaxis_tmp)
+
+
+###### gene allel
+IGL_gr <- GRanges("IGL", IRanges(-1, width = 1))
+
+IGL_gr$SNPsideID <- "top"
+features_IGL_mul <- GRanges("IGL", IRanges(start = c(min(ARS_UCD_IGL$start)-5000,ARS_UCD_IGL$start,
+                                                     IGL_gap_start-70665574),
+                                           end = c(71188548+30000-70665574,ARS_UCD_IGL$end,
+                                                   IGL_gap_start-70665574+1000)))
+IGL_allel_num <- nrow(ARS_UCD_IGL)
+features_IGL_mul$fill <- rep(c("#CE896A","#44435F","#44435F"), c(1,IGL_allel_num,1))
+features_IGL_mul$color <- rep(c("#CE896A","#44435F","#44435F"), c(1,IGL_allel_num,1))
+features_IGL_mul$height <- rep(0.04, length(features_IGL_mul))
+# features_IGL_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_IGL_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.IGL.allel","IGL.gap"), c(1,IGL_allel_num,1))
+names(features_IGL_mul) <- rep(c("contig","IGL allel","IGL.gap"),c(1,IGL_allel_num,1))
+
+gr <- GRanges("IGL", IRanges(min(ARS_UCD_IGL$start)-5000,71188548+30000-70665574))
+# x <- lolliplot(IGL_gr, features_IGL_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T)
+xaxis_tmp <- c(400000,420000,440000,460000,480000,500000,520000,540000)
+names(xaxis_tmp) <- c("71.06Mb","71.08Mb","71.1Mb","71.12Mb","71.14Mb","71.16Mb","71.18Mb","71.2Mb")
+x <- lolliplot(IGL_gr, features_IGL_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T, xaxis = xaxis_tmp)
+
+
+## alignment
+options(ucscChromosomeNames=FALSE)
+gTrack <- GenomeAxisTrack(cex = 1)
+
+chr17_igl_allel_loci <- as.data.frame(fread("./newData_20220115/chrContigloci.csv"))
+chr17_igl_allel_loci[17,]
+
+color_tmp <- list(c("#749e89","#c399a2"))
+
+chrom <- "ctg000010_np12121212"
+afrom <- 72600000
+ato <- 72750000
+alTrack <- Gviz:::.import.bam.alignments("/home/share/litt/proj/cow/results/longAlignment/contigs/ont_ctg_immuno_loci_100kb_filtered.bam", GRanges(chrom, IRanges(afrom, ato)))
+alTrack <- AlignmentsTrack(sort(alTrack))
+plotTracks(c(gTrack, alTrack), chromosome = "ctg000010_np12121212", from = afrom, to = ato, 
+             fill.reads=color_tmp[[1]][as.numeric(sort(ranges(alTrack)$readStrand))],
+             col.reads=NA, 
+             alpha.reads=1)
+```
+
+## Figure S10B - NCBA1.0 IGK gene locus (chr and contig info)
+
+```{r}
+## IGK region
+IGK_region <- as.data.frame(fread("./newData_20220115/IGK/IGK_mapResults_clean.csv"))
+IGK_region$location <- 47100000+IGK_region$start+round(0.5*IGK_region$length)
+
+chr_ctg_loci <- fread("./newData_20220115/chrContigloci.csv")
+
+IGK_gr <- GRanges("chr11", IRanges(IGK_region$location, width = 1, names = IGK_region$annotation))
+IGK_gr$score <- runif(length(IGK_gr))*10
+
+
+IGK_gr$SNPsideID <- "top"
+features_IGK <- GRanges("chr11", IRanges(start = c(0,0,47100000+IGK_region$start), end = c(107542840,107542840,47100000+IGK_region$start+IGK_region$length)))
+
+features_IGK$fill <- rep(c("#035E80","#6D8D7D","#101010"), c(1,1,nrow(IGK_region)))
+features_IGK$color <- rep(c("#035E80","#6D8D7D","#101010"), c(1,1,nrow(IGK_region)))
+features_IGK$height <- c(0.04)
+features_IGK$featureLayerID <-
+  rep(c("bottom.chr", "median.contig", "top.IGK.allel"), c(1, 1,nrow(IGK_region)))
+names(features_IGK) <- rep(c("chr11", "ctg000016", "IGK allel"), c(1, 1,nrow(IGK_region)))
+x <- lolliplot(IGK_gr, features_IGK, cex = 0.6, yaxis = F, ylab = F)
+
+
+IGK_gr <- GRanges("chr11", IRanges(-1, width = 1))
+IGK_gr$score <- runif(length(IGK_gr))*10
+IGK_gr$SNPsideID <- "bottom"
+features_IGK <- GRanges("chr11", IRanges(start = c(47100000+IGK_region$start,0,0), end = c(47100000+IGK_region$start+IGK_region$length,107542840,107542840)))
+
+features_IGK$fill <- rep(c("#101010", "#6D8D7D","#035E80"), c(nrow(IGK_region),1,1))
+features_IGK$color <- rep(c("#101010", "#6D8D7D","#035E80"), c(nrow(IGK_region),1,1))
+features_IGK$height <- c(0.04)
+features_IGK$featureLayerID <-
+  rep(c("bottom.IGK.allel", "median.contig", "top.chr"), c(nrow(IGK_region), 1, 1))
+names(features_IGK) <- rep(c("IGK allel", "ctg000016", "chr11"), c(nrow(IGK_region), 1, 1))
+x <- lolliplot(IGK_gr, features_IGK, cex = 0.6, yaxis = F, ylab = F)
+
+
+## reads alignment
+options(ucscChromosomeNames=FALSE)
+gTrack <- GenomeAxisTrack(cex = 1)
+
+chr11_igk_allel_loci <- as.data.frame(fread("./newData_20220115/chrContigloci.csv"))
+chr11_igk_allel_loci[11,]
+
+color_tmp <- list(c("#749e89","#c399a2"))
+
+chrom <- "ctg000016_np12121212"
+afrom <- 107542840-47500000
+ato <- 107542840-47100000
+alTrack <- Gviz:::.import.bam.alignments("/home/share/litt/proj/cow/results/longAlignment/contigs/ont_ctg_immuno_loci_20kb_filtered.bam", GRanges(chrom, IRanges(afrom, ato)))
+alTrack <- AlignmentsTrack(sort(alTrack))
+plotTracks(c(gTrack, alTrack), chromosome = "ctg000016_np12121212", from = afrom, to = ato, 
+             fill.reads=color_tmp[[1]][as.numeric(sort(ranges(alTrack)$readStrand))],
+             col.reads=NA, 
+             alpha.reads=1)
+
+```
+
+
+

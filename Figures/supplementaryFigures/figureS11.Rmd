@@ -1,0 +1,372 @@
+---
+title: "Global genetic and alignment map of TR loci"
+author: "wujiaqi"
+date: "2022-12-26"
+output: html_document
+---
+
+```{r}
+suppressMessages(library(trackViewer)) 
+suppressMessages(library(data.table))
+suppressMessages(library(RColorBrewer))
+suppressMessages(library(Gviz))
+suppressMessages(library(BSgenome.Hsapiens.UCSC.hg19))
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "/home/wujiaqi/data/cow/")
+```
+
+## Figure S11A - NCBA1.0 TRA&TRD gene loci (chr and contig info)
+
+```{r}
+TRA_TRD_region <- as.data.frame(fread("./newData_20220115/TRAD_gapfilled/TRA_TRD_mapResults_clean_merged - 20220826.csv"))
+TRA_TRD_region$location <- TRA_TRD_region$new_start+round(0.5*TRA_TRD_region$length)
+
+chr_ctg_loci <- fread("./newData_20220115/chrContigloci.csv")
+TRA_TRD_gr <- GRanges("chr10", IRanges(TRA_TRD_region$location, width = 1, names = TRA_TRD_region$annotation_new))
+
+TRA_TRD_gr$SNPsideID <- "top"
+features_TRA_TRD <- GRanges("chr10", IRanges(start = c(0,0,23301493,24850801,TRA_TRD_region$new_start), end = c(103066274,23301392,24846492,103066274,TRA_TRD_region$new_start+TRA_TRD_region$length)))
+
+features_TRA_TRD$fill <- rep(c("#035E80","#6D8D7D","#101010"), c(1,3,nrow(TRA_TRD_region)))
+features_TRA_TRD$color <- rep(c("#035E80","#6D8D7D","#101010"), c(1,3,nrow(TRA_TRD_region)))
+features_TRA_TRD$height <- c(0.04)
+features_TRA_TRD$featureLayerID <-
+  rep(c("bottom.chr", "median.contig", "top.TRA_TRD.allel"), c(1, 3, nrow(TRA_TRD_region)))
+names(features_TRA_TRD) <- rep(c("chr10", "ctg013", "ctg014", "ctg031", "TRA_TRD allel"), c(1, 1, 1, 1,nrow(TRA_TRD_region)))
+# x <- lolliplot(TRA_TRD_gr, features_TRA_TRD, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(0,20000000,40000000,60000000,80000000,100000000)
+names(xaxis_tmp) <- c("0Mb","20Mb","40Mb","60Mb","80Mb","100Mb")
+x <- lolliplot(TRA_TRD_gr, features_TRA_TRD, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+
+
+
+TRA_TRD_gr <- GRanges("chr10", IRanges(-1, width = 1))
+TRA_TRD_gr$SNPsideID <- "bottom"
+features_TRA_TRD <- GRanges("chr10", IRanges(start = c(TRA_TRD_region$new_start,0,23301493,24850801,0), end = c(TRA_TRD_region$new_start+TRA_TRD_region$length,23301392,24846492,103066274,103066274)))
+
+features_TRA_TRD$fill <- rep(c("#101010", "#6D8D7D","#035E80"), c(nrow(TRA_TRD_region),3,1))
+features_TRA_TRD$color <- rep(c("#101010", "#6D8D7D","#035E80"), c(nrow(TRA_TRD_region),3,1))
+features_TRA_TRD$height <- c(0.04)
+features_TRA_TRD$featureLayerID <-
+  rep(c("bottom.TRA_TRD.allel", "median.contig", "top.chr"), c(nrow(TRA_TRD_region), 3, 1))
+names(features_TRA_TRD) <- rep(c("TRA_TRD allel", "ctg013", "ctg014", "ctg031", "chr10"), c(nrow(TRA_TRD_region), 1, 1, 1, 1))
+# x <- lolliplot(TRA_TRD_gr, features_TRA_TRD, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(0,20000000,40000000,60000000,80000000,100000000)
+names(xaxis_tmp) <- c("0Mb","20Mb","40Mb","60Mb","80Mb","100Mb")
+x <- lolliplot(TRA_TRD_gr, features_TRA_TRD, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+
+
+## gene allel
+## TRA_TRD region
+TRA_TRD_region <- as.data.frame(fread("./newData_20220115/TRAD_gapfilled/TRA_TRD_mapResults_clean_merged - 20220826.csv"))
+# all.equal(sort(TRA_TRD_region$new_start), TRA_TRD_region$new_start)
+
+TRA_TRD_region$location <- 26000000 - TRA_TRD_region$new_start - round(0.5*TRA_TRD_region$length)
+TRA_TRD_region$new_start_new <- 26000000 - TRA_TRD_region$new_start - TRA_TRD_region$length
+
+chr_ctg_loci <- fread("./newData_20220115/chrContigloci.csv")
+chr_ctg_loci[10,]
+
+TRA_TRD_gr <- GRanges("TRA_TRD", IRanges(-1, width = 1))
+
+TRA_TRD_gr$SNPsideID <- "top"
+features_TRA_TRD_mul <- GRanges("TRA_TRD", IRanges(start = c(0,TRA_TRD_region$new_start_new),
+                                                   end = c(3800000 ,TRA_TRD_region$new_start_new+TRA_TRD_region$length)))
+TRA_TRD_region$color <- NA
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% "F"] <- "#c93f55"
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% "ORF"] <- "#ffcd12"
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% "P"] <- "#208cc0"
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% NA | TRA_TRD_region$functionality %in% ""] <- "#828282"
+
+TRA_TRD_allel_num <- nrow(TRA_TRD_region)
+features_TRA_TRD_mul$fill <- c("#6D8D7D",TRA_TRD_region$color)
+features_TRA_TRD_mul$color <- c("#6D8D7D",TRA_TRD_region$color)
+features_TRA_TRD_mul$height <- rep(0.04, length(features_TRA_TRD_mul))
+# features_TRA_TRD_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_TRA_TRD_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.TRA_TRD.allel"), c(1,TRA_TRD_allel_num))
+names(features_TRA_TRD_mul) <- rep(c("contig","TRA_TRD allel"),c(1,TRA_TRD_allel_num))
+# x <- lolliplot(TRA_TRD_gr, features_TRA_TRD_mul, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(0,300000,800000,1300000,1800000,2300000,2800000,3300000,3800000)
+names(xaxis_tmp) <- c("26Mb","25.7Mb","25.2Mb","24.7Mb","24.2Mb","23.7Mb","23.2Mb","22.7Mb","22.2Mb")
+x <- lolliplot(TRA_TRD_gr, features_TRA_TRD_mul, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+
+```
+
+
+## Figure S11B - NCBA1.0 TRB gene loci (chr and contig info)
+
+```{r}
+## TRB region
+TRB_region <- as.data.frame(fread("./newData_20220115/TRB/TRB_GENEDB_clean.csv"))
+TRB_region$length <- apply(TRB_region, 1, function(x){tail(strsplit(x[1], split = "_")[[1]], 1)})
+TRB_region$length <- as.integer(gsub("nt","",TRB_region$length))
+
+TRB_region$location <- TRB_region$start+round(0.5*TRB_region$length)
+
+chr_ctg_loci <- fread("./newData_20220115/chrContigloci.csv")
+TRB_gr <- GRanges("chr04", IRanges(TRB_region$location, width = 1, names = TRB_region$annotation))
+
+TRB_gr$SNPsideID <- "top"
+features_TRB <- GRanges("chr04", IRanges(start = c(0,4093785,TRB_region$start), end = c(121860805,112944833,TRB_region$start+TRB_region$length)))
+
+features_TRB$fill <- rep(c("#035E80","#CE896A","#101010"), c(1,1,nrow(TRB_region)))
+features_TRB$color <- rep(c("#035E80","#CE896A","#101010"), c(1,1,nrow(TRB_region)))
+features_TRB$height <- c(0.04)
+features_TRB$featureLayerID <-
+  rep(c("bottom.chr", "median.contig", "top.TRB.allel"), c(1, 1,nrow(TRB_region)))
+names(features_TRB) <- rep(c("chr04", "ctg023", "TRB allel"), c(1, 1,nrow(TRB_region)))
+# x <- lolliplot(TRB_gr, features_TRB, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(0,20000000,40000000,60000000,80000000,100000000,120000000)
+names(xaxis_tmp) <- c("0Mb","20Mb","40Mb","60Mb","80Mb","100Mb","120Mb")
+x <- lolliplot(TRB_gr, features_TRB, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+
+
+TRB_gr <- GRanges("chr04", IRanges(-1, width = 1))
+TRB_gr$SNPsideID <- "bottom"
+features_TRB <- GRanges("chr04", IRanges(start = c(TRB_region$start,4093785,0), end = c(TRB_region$start+TRB_region$length,112944833,121860805)))
+
+features_TRB$fill <- rep(c("#101010", "#CE896A","#035E80"), c(nrow(TRB_region),1,1))
+features_TRB$color <- rep(c("#101010", "#CE896A","#035E80"), c(nrow(TRB_region),1,1))
+features_TRB$height <- c(0.04)
+features_TRB$featureLayerID <-
+  rep(c("bottom.TRB.allel", "median.contig", "top.chr"), c(nrow(TRB_region), 1, 1))
+names(features_TRB) <- rep(c("TRB allel", "ctg023", "chr04"), c(nrow(TRB_region), 1, 1))
+# x <- lolliplot(TRB_gr, features_TRB, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(0,20000000,40000000,60000000,80000000,100000000,120000000)
+names(xaxis_tmp) <- c("0Mb","20Mb","40Mb","60Mb","80Mb","100Mb","120Mb")
+x <- lolliplot(TRB_gr, features_TRB, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+
+
+## gene allel
+## TRB region
+TRB_region <- as.data.frame(fread("./newData_20220115/TRB/TRB_GENEDB_clean.csv"))
+TRB_region$start_new <- TRB_region$start - 105400000
+
+TRB_region$length <- apply(TRB_region, 1, function(x){tail(strsplit(x[1], split = "_")[[1]], 1)})
+TRB_region$length <- as.integer(gsub("nt","",TRB_region$length))
+
+TRB_region$location <- TRB_region$start_new+round(0.5*TRB_region$length)
+
+chr_ctg_loci <- fread("./newData_20220115/chrContigloci.csv")
+chr_ctg_loci[4,]
+
+## 1、TRB allel graph
+# TRB_gr <- GRanges("TRB", IRanges(TRB_region$location, width = 1, names = TRB_region$annotation))
+TRB_gr <- GRanges("TRB", IRanges(-1, width = 1))
+features_TRB<- GRanges("TRB", IRanges(start = 0, end = 106400000-105400000))
+
+features_TRB$fill <- c("#CE896A")
+features_TRB$color <- c("#CE896A")
+features_TRB$height <- c(0.04)
+
+TRB_gr$SNPsideID <- "top"
+features_TRB_mul <- GRanges("TRB", IRanges(start = c(0,TRB_region$start_new),
+                                           end = c(106400000-105400000,TRB_region$start_new+TRB_region$length)))
+TRB_region$color <- NA
+TRB_region$color[TRB_region$functionality %in% "F"] <- "#c93f55"
+TRB_region$color[TRB_region$functionality %in% "ORF"] <- "#ffcd12"
+TRB_region$color[TRB_region$functionality %in% "P"] <- "#208cc0"
+TRB_region$color[TRB_region$functionality %in% NA | TRB_region$functionality %in% ""] <- "#828282"
+
+TRB_allel_num <- nrow(TRB_region)
+features_TRB_mul$fill <- c("#CE896A",TRB_region$color)
+features_TRB_mul$color <- c("#CE896A",TRB_region$color)
+features_TRB_mul$height <- rep(0.04, length(features_TRB_mul))
+# features_TRB_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_TRB_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.TRB.allel"), c(1,TRB_allel_num))
+names(features_TRB_mul) <- rep(c("contig","TRB allel"),c(1,TRB_allel_num))
+# x <- lolliplot(TRB_gr, features_TRB_mul, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(0,200000,400000,600000,800000,1000000)
+names(xaxis_tmp) <- c("105.4Mb","105.6Mb","105.8Mb","106Mb","106.2Mb","106.4Mb")
+x <- lolliplot(TRB_gr, features_TRB_mul, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+
+
+## reads alignment
+options(ucscChromosomeNames=FALSE)
+gTrack <- GenomeAxisTrack(cex = 1)
+
+chr04_TRG_allel_loci <- as.data.frame(fread("./newData_20220115/chrContigloci.csv"))
+chr04_TRG_allel_loci[4,]
+
+color_tmp <- list(c("#749e89","#c399a2"))
+
+chrom <- "chr04"
+afrom <- 105400000
+ato <- 106400000
+alTrack <- Gviz:::.import.bam.alignments("/home/share/litt/proj/cow/results/longAlignment/assembly/ont_assembly_immuno_loci_20kb_filtered.bam", GRanges(chrom, IRanges(afrom, ato)))
+alTrack <- AlignmentsTrack(sort(alTrack))
+plotTracks(c(gTrack, alTrack), chromosome = "chr04", from = afrom, to = ato, 
+             fill.reads=color_tmp[[1]][as.numeric(sort(ranges(alTrack)$readStrand))],
+             col.reads=NA, 
+             alpha.reads=1)
+```
+
+## Figure S11C - NCBA1.0 TRG gene loci (chr and contig info)
+
+```{r}
+## TRG1 region
+TRG1_region <- as.data.frame(fread("./newData_20220115/TRG1/TRG1_mapResults_clean.csv"))
+TRG1_region$location <- TRG1_region$start+round(0.5*TRG1_region$length)
+## TRG2 region
+TRG2_region <- as.data.frame(fread("./newData_20220115/TRG2/TRG2_mapResults_clean.csv"))
+TRG2_region$location <- TRG2_region$start+round(0.5*TRG2_region$length)
+
+chr_ctg_loci <- fread("./newData_20220115/chrContigloci.csv")
+chr_ctg_loci[4,]
+
+all.equal(colnames(TRG1_region), colnames(TRG2_region))
+TRG_region <- rbind(TRG1_region,TRG2_region)
+
+###  chr and contig info
+TRG_gr <- GRanges("chr04", IRanges(TRG_region$location, width = 1, names = TRG_region$annotation))
+
+TRG_gr$SNPsideID <- "top"
+features_TRG <- GRanges("chr04", IRanges(start = c(0,4093785,TRG_region$start), end = c(121860805,112944833,TRG_region$start+TRG_region$length)))
+
+features_TRG$fill <- rep(c("#035E80","#6D8D7D","#101010"), c(1,1,nrow(TRG_region)))
+features_TRG$color <- rep(c("#035E80","#6D8D7D","#101010"), c(1,1,nrow(TRG_region)))
+features_TRG$height <- c(0.04)
+features_TRG$featureLayerID <-
+  rep(c("bottom.chr", "median.contig", "top.TRG.allel"), c(1, 1,nrow(TRG_region)))
+names(features_TRG) <- rep(c("chr04", "ctg023", "TRG allel"), c(1, 1,nrow(TRG_region)))
+# x <- lolliplot(TRG_gr, features_TRG, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(0,20000000,40000000,60000000,80000000,100000000,120000000)
+names(xaxis_tmp) <- c("0Mb","20Mb","40Mb","60Mb","80Mb","100Mb","120Mb")
+x <- lolliplot(TRG_gr, features_TRG, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+
+
+
+TRG_gr <- GRanges("chr04", IRanges(-1, width = 1))
+
+TRG_gr$SNPsideID <- "bottom"
+features_TRG <- GRanges("chr04", IRanges(start = c(TRG_region$start,4093785,0), end = c(TRG_region$start+TRG_region$length,112944833,121860805)))
+
+features_TRG$fill <- rep(c("#101010", "#6D8D7D","#035E80"), c(nrow(TRG_region),1,1))
+features_TRG$color <- rep(c("#101010", "#6D8D7D","#035E80"), c(nrow(TRG_region),1,1))
+features_TRG$height <- c(0.04)
+features_TRG$featureLayerID <-
+  rep(c("bottom.TRG.allel", "median.contig", "top.chr"), c(nrow(TRG_region), 1, 1))
+names(features_TRG) <- rep(c("TRG allel", "ctg023", "chr04"), c(nrow(TRG_region), 1, 1))
+# x <- lolliplot(TRG_gr, features_TRG, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(0,20000000,40000000,60000000,80000000,100000000,120000000)
+names(xaxis_tmp) <- c("0Mb","20Mb","40Mb","60Mb","80Mb","100Mb","120Mb")
+x <- lolliplot(TRG_gr, features_TRG, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+
+
+## gene allel
+## TRG1 region
+TRG1_gr <- GRanges("TRG1", IRanges(TRG1_region$location, width = 1, names = TRG1_region$annotation))
+features_TRG1 <- GRanges("TRG1", IRanges(start = 0, end = 121860805))
+
+features_TRG1$fill <- c("#6D8D7D")
+features_TRG1$color <- c("#6D8D7D")
+features_TRG1$height <- c(0.04)
+
+TRG1_gr$SNPsideID <- "top"
+features_TRG1_mul <- GRanges("TRG1", IRanges(start = c(0,TRG1_region$start),
+                                           end = c(121860805,TRG1_region$star+TRG1_region$length)))
+
+table(TRG1_region$functionality)
+TRG1_region$color <- NA
+TRG1_region$color[TRG1_region$functionality %in% "F"] <- "#c93f55"
+TRG1_region$color[TRG1_region$functionality %in% "ORF"] <- "#ffcd12"
+TRG1_region$color[TRG1_region$functionality %in% "P"] <- "#208cc0"
+TRG1_region$color[TRG1_region$functionality %in% "" | TRG1_region$functionality %in% NA] <- "#828282"
+
+TRG1_allel_num <- nrow(TRG1_region)
+features_TRG1_mul$fill <- c("#6D8D7D",TRG1_region$color)
+features_TRG1_mul$color <- c("#6D8D7D",TRG1_region$color)
+features_TRG1_mul$height <- rep(0.04, length(features_TRG1_mul))
+# features_TRG1_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_TRG1_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.TRG1.allel"), c(1,TRG1_allel_num))
+names(features_TRG1_mul) <- rep(c("contig","TRG1 allel"),c(1,TRG1_allel_num))
+
+gr <- GRanges("TRG1", IRanges(82470000,82755000))
+# x <- lolliplot(TRG1_gr, features_TRG1_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T)
+xaxis_tmp <- c(82500000,82600000,82700000)
+names(xaxis_tmp) <- c("82.5Mb","82.6Mb","82.7Mb")
+x <- lolliplot(TRG1_gr, features_TRG1_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T, xaxis = xaxis_tmp)
+
+
+## TRG2 region
+TRG2_gr <- GRanges("TRG2", IRanges(TRG2_region$location, width = 1, names = TRG2_region$annotation))
+features_TRG2 <- GRanges("TRG2", IRanges(start = 0, end = 121860805))
+
+features_TRG2$fill <- c("#6D8D7D")
+features_TRG2$color <- c("#6D8D7D")
+features_TRG2$height <- c(0.04)
+
+TRG2_gr$SNPsideID <- "top"
+features_TRG2_mul <- GRanges("TRG2", IRanges(start = c(0,TRG2_region$start),
+                                             end = c(121860805,TRG2_region$star+TRG2_region$length)))
+table(TRG2_region$functionality)
+TRG2_region$color <- NA
+TRG2_region$color[TRG2_region$functionality %in% "F"] <- "#c93f55"
+TRG2_region$color[TRG2_region$functionality %in% "ORF"] <- "#ffcd12"
+TRG2_region$color[TRG2_region$functionality %in% "P"] <- "#208cc0"
+TRG2_region$color[TRG2_region$functionality %in% "" | TRG2_region$functionality %in% NA] <- "#828282"
+
+TRG2_allel_num <- nrow(TRG2_region)
+features_TRG2_mul$fill <- c("#6D8D7D",TRG2_region$color)
+features_TRG2_mul$color <- c("#6D8D7D",TRG2_region$color)
+features_TRG2_mul$height <- rep(0.04, length(features_TRG2_mul))
+# features_TRG2_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_TRG2_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.TRG2.allel"), c(1,TRG2_allel_num))
+names(features_TRG2_mul) <- rep(c("contig","TRG2 allel"),c(1,TRG2_allel_num))
+
+gr <- GRanges("TRG2", IRanges(50070000,50200000))
+# x <- lolliplot(TRG2_gr, features_TRG2_mul, ranges = gr, cex = 0.8, yaxis = F, ylab = T)
+xaxis_tmp <- c(50100000,50150000,50200000)
+names(xaxis_tmp) <- c("50.1Mb","50.15Mb","50.2Mb")
+x <- lolliplot(TRG2_gr, features_TRG2_mul, ranges = gr, cex = 0.8, yaxis = F, ylab = T, xaxis = xaxis_tmp)
+
+
+## reads alignment
+options(ucscChromosomeNames=FALSE)
+gTrack <- GenomeAxisTrack(cex = 1)
+
+chr04_TRG_allel_loci <- as.data.frame(fread("./newData_20220115/chrContigloci.csv"))
+chr04_TRG_allel_loci[4,]
+
+color_tmp <- list(c("#749e89","#c399a2"))
+
+chrom <- "chr04"
+afrom <- 82470000
+ato <- 82755000
+
+## TRG1
+alTrack <- Gviz:::.import.bam.alignments("/home/share/litt/proj/cow/results/longAlignment/assembly/ont_assembly_immuno_loci_20kb_filtered.bam", GRanges(chrom, IRanges(afrom, ato)))
+alTrack <- AlignmentsTrack(sort(alTrack))
+plotTracks(c(gTrack, alTrack), chromosome = "chr04", from = afrom, to = ato, 
+             fill.reads=color_tmp[[1]][as.numeric(sort(ranges(alTrack)$readStrand))],
+             col.reads=NA, 
+             alpha.reads=1)
+
+## TRG2
+chrom <- "chr04"
+afrom <- 50070000
+ato <- 50200000
+alTrack <- Gviz:::.import.bam.alignments("/home/share/litt/proj/cow/results/longAlignment/assembly/ont_assembly_immuno_loci_20kb_filtered.bam", GRanges(chrom, IRanges(afrom, ato)))
+alTrack <- AlignmentsTrack(sort(alTrack))
+plotTracks(c(gTrack, alTrack), chromosome = "chr04", from = afrom, to = ato, 
+             fill.reads=color_tmp[[1]][as.numeric(sort(ranges(alTrack)$readStrand))],
+             col.reads=NA, 
+             alpha.reads=1)
+
+```
+

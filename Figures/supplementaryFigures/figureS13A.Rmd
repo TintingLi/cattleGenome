@@ -1,0 +1,242 @@
+---
+title: "Genomic assembly and haplotyping of MHC locus"
+author: "wujiaqi"
+date: "2022-12-26"
+output: html_document
+---
+
+```{r}
+suppressMessages(library(trackViewer)) 
+suppressMessages(library(data.table))
+suppressMessages(library(RColorBrewer))
+suppressMessages(library(Gviz))
+suppressMessages(library(BSgenome.Hsapiens.UCSC.hg19))
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "/home/wujiaqi/data/cow/")
+```
+
+## Figure S13A - NCBA1.0 MHC gene locus (chr and contig info)
+
+```{r}
+
+## chr23
+chr23_mhc_allel_loci <- as.data.frame(fread("./newData_20220115/MHC/BoLA_gene_blast_cowAssembly_clean_merged.txt"))
+chr23_mhc_allel_loci
+colnames(chr23_mhc_allel_loci) <- c("query_acc", "subject_acc", "identity", "alignment_length", "qstart", "qend", "query_length", "sstart", "send", "subject_length", "evalue")
+allel_tmp <- sapply(chr23_mhc_allel_loci$query_acc, function(x){strsplit(x, split = "|", fixed = T)[[1]][2]})
+chr23_mhc_allel_loci$allel[grep(pattern = "\\*", x = allel_tmp)] <- sapply(allel_tmp[grep(pattern = "\\*", x = allel_tmp)], function(x){strsplit(x, split = "*", fixed = T)[[1]][1]})
+chr23_mhc_allel_loci$allel[13] <- allel_tmp[13] 
+
+chr23_gr <- GRanges("chr23", IRanges(chr23_mhc_allel_loci$sstart, width = 1, names = chr23_mhc_allel_loci$allel))
+
+
+
+chr23_gr$SNPsideID <- "top"
+chr23_mhc_allel_loci$sstart_new <- as.numeric(apply(chr23_mhc_allel_loci, 1, function(x){min(x[8],x[9])}))
+chr23_mhc_allel_loci$send_new <- as.numeric(apply(chr23_mhc_allel_loci, 1, function(x){max(x[8],x[9])}))
+features_chr23_mul <- GRanges("chr23", IRanges(start = c(0,0,chr23_mhc_allel_loci$sstart_new),
+                                               end = c(54263671, 54263671, chr23_mhc_allel_loci$send_new)))
+mhc_allel_num <- nrow(chr23_mhc_allel_loci)
+features_chr23_mul$fill <- rep(c("#3d3b4f","#828282","#312f3f"), c(1, 1, mhc_allel_num))
+features_chr23_mul$color <- rep(c("#3d3b4f","#828282","#312f3f"), c(1, 1, mhc_allel_num))
+features_chr23_mul$height <- rep(0.04, length(features_chr23_mul))
+# features_chr23_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_chr23_mul$featureLayerID <-
+  rep(c("bottom.chr", "median.contig", "top.mhc.allel"), c(1, 1, mhc_allel_num))
+names(features_chr23_mul) <- rep(c("chr21", "contig", "MHC allel"),c(1, 1, mhc_allel_num))
+# x <- lolliplot(chr23_gr, features_chr23_mul, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(0,10000000,20000000,30000000,40000000,50000000)
+names(xaxis_tmp) <- c("0","10Mb","20Mb","30Mb","40Mb","50Mb")
+x <- lolliplot(chr23_gr, features_chr23_mul, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+
+
+chr23_gr <- GRanges("chr23", IRanges(-1, width = 1))
+chr23_gr$SNPsideID <- "bottom"
+features_chr23_mul <- GRanges("chr23", IRanges(start = c(chr23_mhc_allel_loci$sstart_new,0,0),
+                                               end = c(chr23_mhc_allel_loci$send_new,54263671,54263671)))
+mhc_allel_num <- nrow(chr23_mhc_allel_loci)
+features_chr23_mul$fill <- rep(c("#312f3f","#828282","#3d3b4f"), c(mhc_allel_num,1,1))
+features_chr23_mul$color <- rep(c("#312f3f","#828282","#3d3b4f"), c(mhc_allel_num,1,1))
+features_chr23_mul$height <- rep(0.04, length(features_chr23_mul))
+# features_chr23_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_chr23_mul$featureLayerID <-
+  rep(c("bottom.mhc.allel", "median.contig", "top.chr"), c(mhc_allel_num,1,1))
+names(features_chr23_mul) <- rep(c("MHC allel","contig","chr21"),c(mhc_allel_num,1,1))
+# x <- lolliplot(chr23_gr, features_chr23_mul, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(0,10000000,20000000,30000000,40000000,50000000)
+names(xaxis_tmp) <- c("0","10Mb","20Mb","30Mb","40Mb","50Mb")
+x <- lolliplot(chr23_gr, features_chr23_mul, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+
+
+
+## zoom in
+chr23_gr <- GRanges("chr23", IRanges(chr23_mhc_allel_loci$sstart, width = 1, names = chr23_mhc_allel_loci$allel))
+chr23_gr$SNPsideID <- "bottom"
+gr <- GRanges("chr23", IRanges(26000000,31000000))
+# x <- lolliplot(chr23_gr, features_chr23_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(26000000,27000000,28000000,29000000,30000000,31000000)
+names(xaxis_tmp) <- c("26Mb","27Mb","28Mb","29Mb","30Mb","31Mb")
+x <- lolliplot(chr23_gr, features_chr23_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+
+
+chr23_gr$SNPsideID <- "top"
+gr <- GRanges("chr23", IRanges(26900000,27100000))
+# x <- lolliplot(chr23_gr, features_chr23_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T)
+xaxis_tmp <- c(26900000,26950000,27000000,27050000,27100000)
+names(xaxis_tmp) <- c("26.9Mb","26.95Mb","27Mb","27.05Mb","27.1Mb")
+x <- lolliplot(chr23_gr, features_chr23_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+
+chr23_gr$SNPsideID <- "top"
+gr <- GRanges("chr23", IRanges(29000000,30400000))
+# x <- lolliplot(chr23_gr, features_chr23_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T)
+xaxis_tmp <- c(29000000,29200000,29400000,29600000,29800000,30000000,30200000,30400000)
+names(xaxis_tmp) <- c("29Mb","29.2Mb","29.4Mb","29.6Mb","29.8Mb","30Mb","30.2Mb","30.4Mb")
+x <- lolliplot(chr23_gr, features_chr23_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+
+
+## HP1
+HP1_contigs_align <- fread("./newData_20220115/MHC/mergedhp1bam.tb.clean.txt")
+
+HP1_mhc_allel_align_new <- fread("./newData_20220115/MHC/gene.hp1.csv")
+allel_tmp <- sapply(HP1_mhc_allel_align_new$query.acc., function(x){strsplit(x,split = "|", fixed = T)[[1]][2]})
+allel_name <- sapply(allel_tmp, function(x){strsplit(x, split = "*", fixed = T)[[1]][1]})
+table(allel_name)
+allel_name[which(allel_name == "BoLA-DQB")] <- c("BoLA-DQB-1", "BoLA-DQB-2")
+allel_name[which(allel_name == "BoLA-DRB3")] <- c("BoLA-DRB3-1", "BoLA-DRB3-2")
+allel_name
+HP1_mhc_allel_align_new$allel <- allel_name
+
+mhc_allel_HP1 <- floor(0.5*(HP1_mhc_allel_align_new$fstart + HP1_mhc_allel_align_new$fend))
+HP1_gr <- GRanges("chr23", IRanges(mhc_allel_HP1, width = 1, names = HP1_mhc_allel_align_new$allel))
+features_HP1 <- GRanges("chr23", IRanges(start = HP1_contigs_align$start-1,
+                                         end = HP1_contigs_align$end-1))
+
+features_HP1$fill <- c("#3d3b4f")
+features_HP1$color <- c("#3d3b4f")
+features_HP1$height <- c(0.025)
+
+HP1_mhc_allel_align_new$fstart_new <- as.numeric(apply(HP1_mhc_allel_align_new, 1, function(x){return(min(x[18],x[19]))}))
+HP1_mhc_allel_align_new$fend_new <- as.numeric(apply(HP1_mhc_allel_align_new, 1, function(x){return(max(x[18],x[19]))}))
+features_HP1_mul <- GRanges("chr23", IRanges(start = c(HP1_contigs_align$start-1,HP1_mhc_allel_align_new$fstart_new-2000),
+                                             end = c(HP1_contigs_align$end-1,HP1_mhc_allel_align_new$fend_new+2000)))
+contigs_num <- nrow(HP1_contigs_align)
+mhc_allel_num <- nrow(HP1_mhc_allel_align_new)
+features_HP1_mul$fill <- rep(c("#3d3b4f","#caccd0"), c(contigs_num, mhc_allel_num))
+features_HP1_mul$color <- rep(c("#3d3b4f","#caccd0"), c(contigs_num, mhc_allel_num))
+features_HP1_mul$height <- rep(0.025, length(features_HP1_mul))
+# features_HP1_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_HP1_mul$featureLayerID <-
+  rep(c("bottom.contigs", "top.mhc.allel"), c(contigs_num, mhc_allel_num))
+# names(features_HP1_mul) <-
+#   paste(features_HP1_mul$featureLayerID,
+#         c(seq.int(nrow(HP1_contigs_align)), seq.int(length(which(!is.na(HP1_mhc_allel_align$mhc_allel_cluster))))), sep="_")
+names(features_HP1_mul) <- rep(c("haplotype1 contigs","MHC allel"),c(contigs_num, mhc_allel_num))
+x <- lolliplot(HP1_gr, features_HP1_mul, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(0,1000000,2000000,3000000,4000000,5000000,6000000,7000000)
+names(xaxis_tmp) <- c("24.9Mb","25.9Mb","26.9Mb","27.9Mb","28.9Mb","29.9Mb","30.9Mb","31.9Mb")
+x <- lolliplot(HP1_gr, features_HP1_mul, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+
+
+
+
+## HP2 
+HP2_contigs_align <- fread("./newData_20220115/MHC/mergedhp2bam.tb.clean.txt")
+
+HP2_mhc_allel_align_new <- fread("./newData_20220115/MHC/gene.hp2.csv")
+allel_tmp <- sapply(HP2_mhc_allel_align_new$query.acc., function(x){strsplit(x,split = "|", fixed = T)[[1]][2]})
+allel_name <- sapply(allel_tmp, function(x){strsplit(x, split = "*", fixed = T)[[1]][1]})
+table(allel_name)
+allel_name
+HP2_mhc_allel_align_new$allel <- allel_name
+
+mhc_allel_HP2 <- floor(0.5*(HP2_mhc_allel_align_new$fstart + HP2_mhc_allel_align_new$fend))
+HP2_gr <- GRanges("chr23", IRanges(mhc_allel_HP2, width = 1, names = HP2_mhc_allel_align_new$allel))
+features_HP2 <- GRanges("chr23", IRanges(start = HP2_contigs_align$start-1,
+                                         end = HP2_contigs_align$end-1))
+
+features_HP2$fill <- c("#3d3b4f")
+features_HP2$color <- c("#3d3b4f")
+features_HP2$height <- c(0.025)
+
+HP2_gr$SNPsideID <- "bottom"
+HP2_mhc_allel_align_new$fstart_new <- as.numeric(apply(HP2_mhc_allel_align_new, 1, function(x){return(min(x[18],x[19]))}))
+HP2_mhc_allel_align_new$fend_new <- as.numeric(apply(HP2_mhc_allel_align_new, 1, function(x){return(max(x[18],x[19]))}))
+features_HP2_mul <- GRanges("chr23", IRanges(start = c(HP2_mhc_allel_align_new$fstart_new-2000,HP2_contigs_align$start-1),
+                                             end = c(HP2_mhc_allel_align_new$fend_new+2000,HP2_contigs_align$end-1)))
+contigs_num <- nrow(HP2_contigs_align)
+mhc_allel_num <- nrow(HP2_mhc_allel_align_new)
+features_HP2_mul$fill <- rep(c("#caccd0","#3d3b4f"), c(mhc_allel_num, contigs_num))
+features_HP2_mul$color <- rep(c("#caccd0","#3d3b4f"), c(mhc_allel_num, contigs_num))
+features_HP2_mul$height <- rep(0.025, length(features_HP2_mul))
+# features_HP2_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_HP2_mul$featureLayerID <-
+  rep(c("bottom.mhc.allel", "top.contigs"), c(mhc_allel_num, contigs_num))
+# names(features_HP2_mul) <-
+#   paste(features_HP2_mul$featureLayerID,
+#         c(seq.int(nrow(HP2_contigs_align)), seq.int(length(which(!is.na(HP2_mhc_allel_align_new$mhc_allel_cluster))))), sep="_")
+names(features_HP2_mul) <- rep(c("MHC allel","haplotype1 contigs"),c(mhc_allel_num, contigs_num))
+# x <- lolliplot(HP2_gr, features_HP2_mul, cex = 0.6, yaxis = F, ylab = F, xaxis = T)
+xaxis_tmp <- c(0,1000000,2000000,3000000,4000000,5000000,6000000,7000000)
+names(xaxis_tmp) <- c("24.9Mb","25.9Mb","26.9Mb","27.9Mb","28.9Mb","29.9Mb","30.9Mb","31.9Mb")
+x <- lolliplot(HP2_gr, features_HP2_mul, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+
+
+
+## read alignment
+chr_loci <- as.data.frame(fread("./newData_20220115/chrContigloci.csv"))
+
+options(ucscChromosomeNames=FALSE)
+gTrack <- GenomeAxisTrack(cex = 1)
+
+chr23_mhc_allel_loci <- as.data.frame(fread("./newData_20220115/MHC/BoLA_gene_blast_cowAssembly_clean_merged.txt"))
+chr23_mhc_allel_loci
+chr_loci[23,]
+
+color_tmp <- list(c("#749e89","#c399a2"))
+
+chrom <- "ctg000137_np12121212"
+afrom <- 26900000
+ato <- 27100000
+alTrack <- Gviz:::.import.bam.alignments("/home/share/litt/proj/cow/results/longAlignment/contigs/ont_ctg_immuno_loci_20kb_filtered.bam", GRanges(chrom, IRanges(afrom, ato)))
+alTrack <- AlignmentsTrack(sort(alTrack))
+plotTracks(c(gTrack, alTrack), chromosome = "ctg000137_np12121212", from = afrom, to = ato, 
+             fill.reads=color_tmp[[1]][as.numeric(sort(ranges(alTrack)$readStrand))],
+             col.reads=NA, 
+             alpha.reads=1)
+
+
+chrom <- "ctg000137_np12121212"
+afrom <- 29000000
+ato <- 30400000
+alTrack <- Gviz:::.import.bam.alignments("/home/share/litt/proj/cow/results/longAlignment/contigs/ont_ctg_immuno_loci_20kb_filtered.bam", GRanges(chrom, IRanges(afrom, ato)))
+alTrack <- AlignmentsTrack(sort(alTrack))
+plotTracks(c(gTrack, alTrack), chromosome = "ctg000137_np12121212", from = afrom, to = ato, 
+             fill.reads=color_tmp[[1]][as.numeric(sort(ranges(alTrack)$readStrand))],
+             col.reads=NA, 
+             alpha.reads=1)
+
+
+chrom <- "ctg000137_np12121212"
+afrom <- 26000000
+ato <- 31000000
+alTrack <- Gviz:::.import.bam.alignments("/home/share/litt/proj/cow/results/longAlignment/contigs/ont_ctg_immuno_loci_20kb_filtered.bam", GRanges(chrom, IRanges(afrom, ato)))
+alTrack <- AlignmentsTrack(sort(alTrack))
+plotTracks(c(gTrack, alTrack), chromosome = "ctg000137_np12121212", from = afrom, to = ato, 
+             fill.reads=color_tmp[[1]][as.numeric(sort(ranges(alTrack)$readStrand))],
+             col.reads=NA, 
+             alpha.reads=1)
+
+
+```
+
