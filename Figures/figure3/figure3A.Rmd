@@ -1,0 +1,262 @@
+---
+title: "The cattle TRA/TRD loci"
+author: "wujiaqi"
+date: "2022-12-26"
+output: html_document
+---
+
+```{r}
+suppressMessages(library(trackViewer)) 
+suppressMessages(library(data.table))
+suppressMessages(library(RColorBrewer))
+suppressMessages(library(Gviz))
+suppressMessages(library(BSgenome.Hsapiens.UCSC.hg19))
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "/home/wujiaqi/data/cow/")
+```
+
+## Figure 3A - AUS-UCD TRA/TRD gene loci (without gene name)
+
+```{r}
+## TRA_TRD region
+TRA_region <- as.data.frame(fread("./newData_20220115/geneloci/TRA_ARS_UCD1.2_geneloci_clean.csv"))
+TRD_region <- as.data.frame(fread("./newData_20220115/geneloci/TRD_ARS_UCD1.2_geneloci_clean.csv"))
+all.equal(colnames(TRA_region),colnames(TRD_region))
+TRA_TRD_region <- rbind(TRA_region,TRD_region)
+TRA_TRD_region$`IMGT label positions` <- apply(TRA_TRD_region, 1, function(x){gsub(">", "", x[7])})
+TRA_TRD_region$`IMGT label positions` <- apply(TRA_TRD_region, 1, function(x){gsub("<", "", x[7])})
+TRA_TRD_region$`IMGT label positions` <- apply(TRA_TRD_region, 1, function(x){gsub("complement\\(", "", x[7])})
+TRA_TRD_region$`IMGT label positions` <- apply(TRA_TRD_region, 1, function(x){gsub("\\)", "", x[7])})
+
+TRA_TRD_region$`chr label positions` <- apply(TRA_TRD_region, 1, function(x){gsub("complement\\(", "", x[11])})
+TRA_TRD_region$`chr label positions` <- apply(TRA_TRD_region, 1, function(x){gsub("\\)", "", x[11])})
+
+TRA_TRD_region$start <- apply(TRA_TRD_region, 1, function(x){as.integer(strsplit(x[7],split = "\\..")[[1]][1])})
+TRA_TRD_region$end <- apply(TRA_TRD_region, 1, function(x){as.integer(strsplit(x[7],split = "\\..")[[1]][2])})
+TRA_TRD_region$location <- round(0.5*(TRA_TRD_region$start+TRA_TRD_region$end))
+
+TRA_TRD_region$`IMGT allele name and Functionality` <- apply(TRA_TRD_region, 1, function(x){strsplit(x[4], split = " ")[[1]][2]})
+colnames(TRA_TRD_region)[4] <- "functionality"
+
+## 1、TRA_TRD allel graph
+# TRA_TRD_gr <- GRanges("TRA_TRD", IRanges(TRA_TRD_region$location, width = 1, names = TRA_TRD_region$`IMGT gene name`))
+TRA_TRD_gr <- GRanges("TRA_TRD", IRanges(-1, width = 1))
+features_TRA_TRD <- GRanges("TRA_TRD", IRanges(start = 0, end = 25584362-22253137))
+
+features_TRA_TRD$fill <- c("#CE896A")
+features_TRA_TRD$color <- c("#CE896A")
+features_TRA_TRD$height <- c(0.04)
+
+TRA_TRD_gr$SNPsideID <- "top"
+features_TRA_TRD_mul <- GRanges("TRA_TRD", IRanges(start = c(0,TRA_TRD_region$start),
+                                           end = c(25584362-22253137,TRA_TRD_region$end)))
+
+table(TRA_TRD_region$functionality)
+TRA_TRD_region$color <- NA
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% "F"] <- "#c93f55"
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% "ORF"] <- "#ffcd12"
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% "P"] <- "#208cc0"
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% "" | TRA_TRD_region$functionality %in% NA] <- "#828282"
+
+TRA_TRD_allel_num <- nrow(TRA_TRD_region)
+features_TRA_TRD_mul$fill <- c("#BFBFBF",TRA_TRD_region$color)
+features_TRA_TRD_mul$color <- c("#BFBFBF",TRA_TRD_region$color)
+features_TRA_TRD_mul$height <- rep(0.04, length(features_TRA_TRD_mul))
+# features_TRA_TRD_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_TRA_TRD_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.TRA_TRD.allel"), c(1,TRA_TRD_allel_num))
+names(features_TRA_TRD_mul) <- rep(c("contig","TRA_TRD allel"),c(1,TRA_TRD_allel_num))
+x <- lolliplot(TRA_TRD_gr, features_TRA_TRD_mul, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(0,500000,1000000,1500000,2000000,2500000,3000000)
+names(xaxis_tmp) <- c("25.58Mb","25.08Mb","24.58Mb","24.08Mb","23.58Mb","23.08Mb","22.58Mb")
+x <- lolliplot(TRA_TRD_gr, features_TRA_TRD_mul, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+```
+
+## Figure 3A - AUS-UCD TRA/TRD gene loci (with gene name)
+
+
+```{r}
+TRA_TRD_gr <- GRanges("TRA_TRD", IRanges(TRA_TRD_region$location, width = 1, names = TRA_TRD_region$`IMGT gene name`))
+# TRA_TRD_gr <- GRanges("TRA_TRD", IRanges(-1, width = 1))
+features_TRA_TRD <- GRanges("TRA_TRD", IRanges(start = 0, end = 25584362-22253137))
+
+features_TRA_TRD$fill <- c("#CE896A")
+features_TRA_TRD$color <- c("#CE896A")
+features_TRA_TRD$height <- c(0.04)
+
+TRA_TRD_gr$SNPsideID <- "top"
+features_TRA_TRD_mul <- GRanges("TRA_TRD", IRanges(start = c(0,TRA_TRD_region$start),
+                                           end = c(25584362-22253137,TRA_TRD_region$end)))
+
+table(TRA_TRD_region$functionality)
+TRA_TRD_region$color <- NA
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% "F"] <- "#c93f55"
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% "ORF"] <- "#ffcd12"
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% "P"] <- "#208cc0"
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% "" | TRA_TRD_region$functionality %in% NA] <- "#828282"
+
+TRA_TRD_allel_num <- nrow(TRA_TRD_region)
+features_TRA_TRD_mul$fill <- c("#BFBFBF",TRA_TRD_region$color)
+features_TRA_TRD_mul$color <- c("#BFBFBF",TRA_TRD_region$color)
+features_TRA_TRD_mul$height <- rep(0.04, length(features_TRA_TRD_mul))
+# features_TRA_TRD_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_TRA_TRD_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.TRA_TRD.allel"), c(1,TRA_TRD_allel_num))
+names(features_TRA_TRD_mul) <- rep(c("contig","TRA_TRD allel"),c(1,TRA_TRD_allel_num))
+# x <- lolliplot(TRA_TRD_gr, features_TRA_TRD_mul, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(0,500000,1000000,1500000,2000000,2500000,3000000)
+names(xaxis_tmp) <- c("25.58Mb","25.08Mb","24.58Mb","24.08Mb","23.58Mb","23.08Mb","22.58Mb")
+x <- lolliplot(TRA_TRD_gr, features_TRA_TRD_mul, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+```
+
+## Figure 3A - NCBA 1.0 TRA/TRD gene loci (with gene name)
+
+```{r}
+## TRA_TRD region
+TRA_TRD_region <- as.data.frame(fread("./newData_20220115/TRAD_gapfilled/TRA_TRD_mapResults_clean_merged - 20220826.csv"))
+all.equal(sort(TRA_TRD_region$new_start), TRA_TRD_region$new_start)
+
+TRA_TRD_region$location <- 26000000 - TRA_TRD_region$new_start - round(0.5*TRA_TRD_region$length)
+TRA_TRD_region$new_start_new <- 26000000 - TRA_TRD_region$new_start - TRA_TRD_region$length
+
+chr_ctg_loci <- fread("./newData_20220115/chrContigloci.csv")
+chr_ctg_loci[10,]
+
+TRA_TRD_gr <- GRanges("TRA_TRD", IRanges(TRA_TRD_region$location, width = 1, names = TRA_TRD_region$annotation_new))
+# TRA_TRD_gr <- GRanges("TRA_TRD", IRanges(-1, width = 1))
+
+TRA_TRD_gr$SNPsideID <- "top"
+features_TRA_TRD_mul <- GRanges("TRA_TRD", IRanges(start = c(0,TRA_TRD_region$new_start_new),
+                                                   end = c(3800000 ,TRA_TRD_region$new_start_new+TRA_TRD_region$length)))
+TRA_TRD_region$color <- NA
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% "F"] <- "#c93f55"
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% "ORF"] <- "#ffcd12"
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% "P"] <- "#208cc0"
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% NA | TRA_TRD_region$functionality %in% ""] <- "#828282"
+
+TRA_TRD_allel_num <- nrow(TRA_TRD_region)
+features_TRA_TRD_mul$fill <- c("#6D8D7D",TRA_TRD_region$color)
+features_TRA_TRD_mul$color <- c("#6D8D7D",TRA_TRD_region$color)
+features_TRA_TRD_mul$height <- rep(0.04, length(features_TRA_TRD_mul))
+# features_TRA_TRD_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_TRA_TRD_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.TRA_TRD.allel"), c(1,TRA_TRD_allel_num))
+names(features_TRA_TRD_mul) <- rep(c("contig","TRA_TRD allel"),c(1,TRA_TRD_allel_num))
+# x <- lolliplot(TRA_TRD_gr, features_TRA_TRD_mul, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(0,300000,800000,1300000,1800000,2300000,2800000,3300000,3800000)
+names(xaxis_tmp) <- c("26Mb","25.7Mb","25.2Mb","24.7Mb","24.2Mb","23.7Mb","23.2Mb","22.7Mb","22.2Mb")
+x <- lolliplot(TRA_TRD_gr, features_TRA_TRD_mul, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+
+```
+
+
+## Figure 2C - NCBA 1.0 TRA/TRD gene loci (without gene name)
+
+```{r}
+TRA_TRD_gr <- GRanges("TRA_TRD", IRanges(-1, width = 1))
+
+TRA_TRD_gr$SNPsideID <- "top"
+features_TRA_TRD_mul <- GRanges("TRA_TRD", IRanges(start = c(0,TRA_TRD_region$new_start_new),
+                                                   end = c(3800000 ,TRA_TRD_region$new_start_new+TRA_TRD_region$length)))
+TRA_TRD_region$color <- NA
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% "F"] <- "#c93f55"
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% "ORF"] <- "#ffcd12"
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% "P"] <- "#208cc0"
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% NA | TRA_TRD_region$functionality %in% ""] <- "#828282"
+
+TRA_TRD_allel_num <- nrow(TRA_TRD_region)
+features_TRA_TRD_mul$fill <- c("#6D8D7D",TRA_TRD_region$color)
+features_TRA_TRD_mul$color <- c("#6D8D7D",TRA_TRD_region$color)
+features_TRA_TRD_mul$height <- rep(0.04, length(features_TRA_TRD_mul))
+# features_TRA_TRD_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_TRA_TRD_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.TRA_TRD.allel"), c(1,TRA_TRD_allel_num))
+names(features_TRA_TRD_mul) <- rep(c("contig","TRA_TRD allel"),c(1,TRA_TRD_allel_num))
+# x <- lolliplot(TRA_TRD_gr, features_TRA_TRD_mul, cex = 0.6, yaxis = F, ylab = F)
+xaxis_tmp <- c(0,300000,800000,1300000,1800000,2300000,2800000,3300000,3800000)
+names(xaxis_tmp) <- c("26Mb","25.7Mb","25.2Mb","24.7Mb","24.2Mb","23.7Mb","23.2Mb","22.7Mb","22.2Mb")
+x <- lolliplot(TRA_TRD_gr, features_TRA_TRD_mul, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+
+```
+
+
+## Figure 3A - ARS-UCD TRA/TRD gene loci with gap info
+
+```{r}
+chr_ctg_loci[10,]
+gap_info <- as.data.frame(fread("./newData_20220115/ARS_UCD1.2_N_gap_locations.csv"))
+
+unique(gap_info$seqnames)
+
+## ARS-UCD1.2
+
+## TRA_TRD gap
+gap_info[gap_info$seqnames %in% "chr10" & gap_info$start > 22253137 & gap_info$start < 25584362, "start"]
+TRA_TRD_gap_start <- gap_info[gap_info$seqnames %in% "chr10" & gap_info$start > 22253137 & gap_info$start < 25584362, "start"]
+
+TRA_TRD_gr$SNPsideID <- "top"
+features_TRA_TRD_mul <- GRanges("TRA_TRD", IRanges(start = c(0,TRA_TRD_gap_start-22253137,
+                                                             0,TRA_TRD_region$new_start_new),
+                                                   end = c(3331226,TRA_TRD_gap_start-22253137+6000,
+                                                           3800000,TRA_TRD_region$new_start_new+TRA_TRD_region$length)))
+TRA_TRD_region$color <- NA
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% "F"] <- "#c93f55"
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% "ORF"] <- "#ffcd12"
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% "P"] <- "#208cc0"
+TRA_TRD_region$color[TRA_TRD_region$functionality %in% NA | TRA_TRD_region$functionality %in% ""] <- "#828282"
+
+
+TRA_TRD_allel_num <- nrow(TRA_TRD_region)
+features_TRA_TRD_mul$fill <- c(rep(c("#005b9f","#005b9f","#6D8D7D"), c(1,7,1)),TRA_TRD_region$color)
+features_TRA_TRD_mul$color <- c(rep(c("#005b9f","#005b9f","#6D8D7D"), c(1,7,1)),TRA_TRD_region$color)
+features_TRA_TRD_mul$height <- rep(0.04, length(features_TRA_TRD_mul))
+# features_TRA_TRD_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_TRA_TRD_mul$featureLayerID <-
+  rep(c("TRA&TRD.gap","TRA&TRD.gap.loci","bottom.contig", "top.TRA_TRD.allel"), c(1,7,1,TRA_TRD_allel_num))
+names(features_TRA_TRD_mul) <- rep(c("TRA&TRD.gap","TRA&TRD.gap.loci","contig","TRA_TRD allel"),c(1,7,1,TRA_TRD_allel_num))
+# x <- lolliplot(TRA_TRD_gr, features_TRA_TRD_mul, cex = 0.6, yaxis = F, ylab = F)
+
+# xaxis_tmp <- c(0,200000,700000,1200000,1700000,2200000,2700000,3200000,3700000)
+# names(xaxis_tmp) <- c("25.9Mb","25.7Mb","25.2Mb","24.7Mb","24.2Mb","23.7Mb","23.2Mb","22.7Mb","22.2Mb")
+xaxis_tmp <- c(0,500000,1000000,1500000,2000000,2500000,3000000)
+names(xaxis_tmp) <- c("25.58Mb","25.08Mb","24.58Mb","24.08Mb","23.58Mb","23.08Mb","22.58Mb")
+x <- lolliplot(TRA_TRD_gr, features_TRA_TRD_mul, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+```
+
+## Figure 3A - NCBA 1.0 TRA/TRD alignment (read length > 100kb)
+
+```{r}
+options(ucscChromosomeNames=FALSE)
+gTrack <- GenomeAxisTrack(cex = 1)
+
+chr10_TRG_allel_loci <- as.data.frame(fread("./newData_20220115/chrContigloci.csv"))
+chr10_TRG_allel_loci[10,]
+
+color_tmp <- list(c("#749e89","#c399a2"))
+
+chrom <- "chr10"
+afrom <- 22200000
+ato <- 26000000
+alTrack <- Gviz:::.import.bam.alignments("/home/share/wujiaqi/cow_anno_gapfill/alignment_track/version2/chr10_TRA_region_all_merged_100kb.bam", GRanges(chrom, IRanges(afrom, ato)))
+alTrack <- AlignmentsTrack(sort(alTrack))
+plotTracks(c(gTrack, alTrack), chromosome = "chr10", from = afrom, to = ato, 
+             fill.reads=color_tmp[[1]][as.numeric(sort(ranges(alTrack)$readStrand))],
+             # col.reads="white", 
+             col.reads=NA, 
+             alpha.reads=1)
+    
+```
+
