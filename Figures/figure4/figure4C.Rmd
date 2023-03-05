@@ -1,0 +1,164 @@
+---
+title: "The cattle TRB&TRG loci"
+author: "wujiaqi"
+date: "2022-12-26"
+output: html_document
+---
+
+```{r}
+suppressMessages(library(trackViewer)) 
+suppressMessages(library(data.table))
+suppressMessages(library(RColorBrewer))
+suppressMessages(library(Gviz))
+suppressMessages(library(BSgenome.Hsapiens.UCSC.hg19))
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "/home/wujiaqi/data/cow/")
+```
+
+
+## Figure 4C - NCBA 1.0 TRG gene loci (TRG1 region, with gene name)
+
+```{r}
+## TRG1 region
+TRG1_region <- as.data.frame(fread("./newData_20220115/TRG1/TRG1_mapResults_clean.csv"))
+TRG1_region$location <- TRG1_region$start+round(0.5*TRG1_region$length)
+chr_ctg_loci <- fread("./newData_20220115/chrContigloci.csv")
+chr_ctg_loci[4,]
+
+## 1、TRG1 allel graph
+TRG1_gr <- GRanges("TRG1", IRanges(TRG1_region$location, width = 1, names = TRG1_region$annotation))
+features_TRG1 <- GRanges("TRG1", IRanges(start = 0, end = 121860805))
+
+features_TRG1$fill <- c("#6D8D7D")
+features_TRG1$color <- c("#6D8D7D")
+features_TRG1$height <- c(0.04)
+
+TRG1_gr$SNPsideID <- "top"
+features_TRG1_mul <- GRanges("TRG1", IRanges(start = c(0,TRG1_region$start),
+                                           end = c(121860805,TRG1_region$star+TRG1_region$length)))
+
+table(TRG1_region$functionality)
+TRG1_region$color <- NA
+TRG1_region$color[TRG1_region$functionality %in% "F"] <- "#c93f55"
+TRG1_region$color[TRG1_region$functionality %in% "ORF"] <- "#ffcd12"
+TRG1_region$color[TRG1_region$functionality %in% "P"] <- "#208cc0"
+TRG1_region$color[TRG1_region$functionality %in% "" | TRG1_region$functionality %in% NA] <- "#828282"
+
+TRG1_allel_num <- nrow(TRG1_region)
+features_TRG1_mul$fill <- c("#6D8D7D",TRG1_region$color)
+features_TRG1_mul$color <- c("#6D8D7D",TRG1_region$color)
+features_TRG1_mul$height <- rep(0.04, length(features_TRG1_mul))
+# features_TRG1_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_TRG1_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.TRG1.allel"), c(1,TRG1_allel_num))
+names(features_TRG1_mul) <- rep(c("contig","TRG1 allel"),c(1,TRG1_allel_num))
+# x <- lolliplot(TRG1_gr, features_TRG1_mul, cex = 0.6, yaxis = F, ylab = F)
+# xaxis_tmp <- c(0,20000000,40000000,60000000,80000000,100000000,120000000)
+# names(xaxis_tmp) <- c("0Mb","20Mb","40Mb","60Mb","80Mb","100Mb","120Mb")
+# x <- lolliplot(TRG1_gr, features_TRG1_mul, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+
+TRG1_gr$SNPsideID <- "top"
+gr <- GRanges("TRG1", IRanges(82400000,82800000))
+# x <- lolliplot(TRG1_gr, features_TRG1_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T)
+xaxis_tmp <- c(82400000,82500000,82600000,82700000,82800000)
+names(xaxis_tmp) <- c("82.4Mb","82.5Mb","82.6Mb","82.7Mb","82.8Mb")
+x <- lolliplot(TRG1_gr, features_TRG1_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T, xaxis = xaxis_tmp)
+
+```
+
+
+## Figure 4C - NCBA 1.0 TRG gene loci (TRG2 region, with gene name)
+
+```{r}
+## TRG2 region
+TRG2_region <- as.data.frame(fread("./newData_20220115/TRG2/TRG2_mapResults_clean.csv"))
+TRG2_region$location <- TRG2_region$start+round(0.5*TRG2_region$length)
+chr_ctg_loci <- fread("./newData_20220115/chrContigloci.csv")
+chr_ctg_loci[4,]
+
+## 1、TRG2 allel graph
+TRG2_gr <- GRanges("TRG2", IRanges(TRG2_region$location, width = 1, names = TRG2_region$annotation))
+features_TRG2 <- GRanges("TRG2", IRanges(start = 0, end = 121860805))
+
+features_TRG2$fill <- c("#6D8D7D")
+features_TRG2$color <- c("#6D8D7D")
+features_TRG2$height <- c(0.04)
+
+TRG2_gr$SNPsideID <- "top"
+features_TRG2_mul <- GRanges("TRG2", IRanges(start = c(0,TRG2_region$start),
+                                             end = c(121860805,TRG2_region$star+TRG2_region$length)))
+table(TRG2_region$functionality)
+TRG2_region$color <- NA
+TRG2_region$color[TRG2_region$functionality %in% "F"] <- "#c93f55"
+TRG2_region$color[TRG2_region$functionality %in% "ORF"] <- "#ffcd12"
+TRG2_region$color[TRG2_region$functionality %in% "P"] <- "#208cc0"
+TRG2_region$color[TRG2_region$functionality %in% "" | TRG2_region$functionality %in% NA] <- "#828282"
+
+TRG2_allel_num <- nrow(TRG2_region)
+features_TRG2_mul$fill <- c("#6D8D7D",TRG2_region$color)
+features_TRG2_mul$color <- c("#6D8D7D",TRG2_region$color)
+features_TRG2_mul$height <- rep(0.04, length(features_TRG2_mul))
+# features_TRG2_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_TRG2_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.TRG2.allel"), c(1,TRG2_allel_num))
+names(features_TRG2_mul) <- rep(c("contig","TRG2 allel"),c(1,TRG2_allel_num))
+# x <- lolliplot(TRG2_gr, features_TRG2_mul, cex = 0.6, yaxis = F, ylab = F)
+# xaxis_tmp <- c(0,20000000,40000000,60000000,80000000,100000000,120000000)
+# names(xaxis_tmp) <- c("0Mb","20Mb","40Mb","60Mb","80Mb","100Mb","120Mb")
+# x <- lolliplot(TRG2_gr, features_TRG2_mul, cex = 0.6, yaxis = F, ylab = F, xaxis = xaxis_tmp)
+
+TRG2_gr$SNPsideID <- "top"
+gr <- GRanges("TRG2", IRanges(50000000,50200000))
+# x <- lolliplot(TRG2_gr, features_TRG2_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T)
+xaxis_tmp <- c(50000000,50050000,50100000,50150000,50200000)
+names(xaxis_tmp) <- c("50Mb","50.05Mb","50.1Mb","50.15Mb","50.2Mb")
+x <- lolliplot(TRG2_gr, features_TRG2_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T, xaxis = xaxis_tmp)
+```
+
+
+## Figure 4C - NCBA 1.0 TRG alignment
+
+```{r}
+options(ucscChromosomeNames=FALSE)
+gTrack <- GenomeAxisTrack(cex = 1)
+
+chr04_TRG_allel_loci <- as.data.frame(fread("./newData_20220115/chrContigloci.csv"))
+chr04_TRG_allel_loci[4,]
+
+color_tmp <- list(c("#749e89","#c399a2"))
+
+## TRG1 region
+chrom <- "chr04"
+afrom <- 82470000
+ato <- 82755000
+alTrack <- Gviz:::.import.bam.alignments("/home/share/litt/proj/cow/results/longAlignment/assembly/ont_assembly_immuno_loci_100kb.bam", GRanges(chrom, IRanges(afrom, ato)))
+alTrack <- AlignmentsTrack(sort(alTrack))
+plotTracks(c(gTrack, alTrack), chromosome = "chr04", from = afrom, to = ato, 
+             fill.reads=color_tmp[[1]][as.numeric(sort(ranges(alTrack)$readStrand))],
+             # col.reads="white", 
+             col.reads=NA, 
+             alpha.reads=1)
+
+
+
+
+## TRG2 region
+chrom <- "chr04"
+afrom <- 50070000
+ato <- 50200000
+alTrack <- Gviz:::.import.bam.alignments("/home/share/litt/proj/cow/results/longAlignment/assembly/ont_assembly_immuno_loci_100kb.bam", GRanges(chrom, IRanges(afrom, ato)))
+alTrack <- AlignmentsTrack(sort(alTrack))
+plotTracks(c(gTrack, alTrack), chromosome = "chr04", from = afrom, to = ato, 
+             fill.reads=color_tmp[[1]][as.numeric(sort(ranges(alTrack)$readStrand))],
+             # col.reads="white", 
+             col.reads=NA, 
+             alpha.reads=1)
+```
+

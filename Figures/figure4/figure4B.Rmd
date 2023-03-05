@@ -1,0 +1,144 @@
+---
+title: "The cattle immunoglobin loci of TRB&TRG region"
+author: "wujiaqi"
+date: "2022-12-26"
+output: html_document
+---
+
+```{r}
+suppressMessages(library(trackViewer)) 
+suppressMessages(library(data.table))
+suppressMessages(library(RColorBrewer))
+suppressMessages(library(Gviz))
+suppressMessages(library(BSgenome.Hsapiens.UCSC.hg19))
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "/home/wujiaqi/data/cow/")
+```
+
+## Figure 4B - NCBA 1.0 TRB gene loci (without gene name)
+
+```{r}
+## TRB region
+TRB_region <- as.data.frame(fread("./newData_20220115/TRB/TRB_GENEDB_clean.csv"))
+TRB_region$start_new <- TRB_region$start - 105400000
+
+TRB_region$length <- apply(TRB_region, 1, function(x){tail(strsplit(x[1], split = "_")[[1]], 1)})
+TRB_region$length <- as.integer(gsub("nt","",TRB_region$length))
+
+TRB_region$location <- TRB_region$start_new+round(0.5*TRB_region$length)
+
+chr_ctg_loci <- fread("./newData_20220115/chrContigloci.csv")
+chr_ctg_loci[4,]
+
+## 1、TRB allel graph
+# TRB_gr <- GRanges("TRB", IRanges(TRB_region$location, width = 1, names = TRB_region$annotation))
+TRB_gr <- GRanges("TRB", IRanges(-1, width = 1))
+features_TRB<- GRanges("TRB", IRanges(start = 0, end = 106400000-105400000))
+
+features_TRB$fill <- c("#CE896A")
+features_TRB$color <- c("#CE896A")
+features_TRB$height <- c(0.04)
+
+TRB_gr$SNPsideID <- "top"
+features_TRB_mul <- GRanges("TRB", IRanges(start = c(0,TRB_region$start_new),
+                                           end = c(106400000-105400000,TRB_region$start_new+TRB_region$length)))
+TRB_region$color <- NA
+TRB_region$color[TRB_region$functionality %in% "F"] <- "#c93f55"
+TRB_region$color[TRB_region$functionality %in% "ORF"] <- "#ffcd12"
+TRB_region$color[TRB_region$functionality %in% "P"] <- "#208cc0"
+TRB_region$color[TRB_region$functionality %in% NA | TRB_region$functionality %in% ""] <- "#828282"
+
+TRB_allel_num <- nrow(TRB_region)
+features_TRB_mul$fill <- c("#CE896A",TRB_region$color)
+features_TRB_mul$color <- c("#CE896A",TRB_region$color)
+features_TRB_mul$height <- rep(0.04, length(features_TRB_mul))
+# features_TRB_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_TRB_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.TRB.allel"), c(1,TRB_allel_num))
+names(features_TRB_mul) <- rep(c("contig","TRB allel"),c(1,TRB_allel_num))
+
+TRB_gr$SNPsideID <- "top"
+gr <- GRanges("TRB", IRanges(0,300000))
+# x <- lolliplot(TRB_gr, features_TRB_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T)
+xaxis_tmp <- c(0,100000,200000,300000)
+names(xaxis_tmp) <- c("105.4Mb","105.5Mb","105.6Mb","105.7Mb")
+x <- lolliplot(TRB_gr, features_TRB_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T, xaxis = xaxis_tmp)
+
+
+TRB_gr$SNPsideID <- "top"
+gr <- GRanges("TRB", IRanges(300000,600000))
+# x <- lolliplot(TRB_gr, features_TRB_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T)
+xaxis_tmp <- c(300000,400000,500000,600000)
+names(xaxis_tmp) <- c("105.7Mb","105.8Mb","105.9Mb","106Mb")
+x <- lolliplot(TRB_gr, features_TRB_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T, xaxis = xaxis_tmp)
+
+
+TRB_gr$SNPsideID <- "top"
+gr <- GRanges("TRB", IRanges(600000,900000))
+# x <- lolliplot(TRB_gr, features_TRB_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T)
+xaxis_tmp <- c(600000,700000,800000,900000)
+names(xaxis_tmp) <- c("106Mb","106.1Mb","106.2Mb","106.3Mb")
+x <- lolliplot(TRB_gr, features_TRB_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T, xaxis = xaxis_tmp)
+
+```
+
+## Figure 4B - NCBA 1.0 TRB gene loci (with gene name)
+
+```{r}
+## TRB region
+TRB_gr <- GRanges("TRB", IRanges(TRB_region$location, width = 1, names = TRB_region$annotation))
+# TRB_gr <- GRanges("TRB", IRanges(-1, width = 1))
+features_TRB<- GRanges("TRB", IRanges(start = 0, end = 106400000-105400000))
+
+features_TRB$fill <- c("#CE896A")
+features_TRB$color <- c("#CE896A")
+features_TRB$height <- c(0.04)
+
+TRB_gr$SNPsideID <- "top"
+features_TRB_mul <- GRanges("TRB", IRanges(start = c(0,TRB_region$start_new),
+                                           end = c(106400000-105400000,TRB_region$start_new+TRB_region$length)))
+TRB_region$color <- NA
+TRB_region$color[TRB_region$functionality %in% "F"] <- "#c93f55"
+TRB_region$color[TRB_region$functionality %in% "ORF"] <- "#ffcd12"
+TRB_region$color[TRB_region$functionality %in% "P"] <- "#208cc0"
+TRB_region$color[TRB_region$functionality %in% NA | TRB_region$functionality %in% ""] <- "#828282"
+
+TRB_allel_num <- nrow(TRB_region)
+features_TRB_mul$fill <- c("#CE896A",TRB_region$color)
+features_TRB_mul$color <- c("#CE896A",TRB_region$color)
+features_TRB_mul$height <- rep(0.04, length(features_TRB_mul))
+# features_TRB_mul$height[4:6] <- list(unit(1/8, "inches"),
+#                                  unit(0.5, "lines"),
+#                                  unit(.2, "char"))
+features_TRB_mul$featureLayerID <-
+  rep(c("bottom.contig", "top.TRB.allel"), c(1,TRB_allel_num))
+names(features_TRB_mul) <- rep(c("contig","TRB allel"),c(1,TRB_allel_num))
+
+TRB_gr$SNPsideID <- "top"
+gr <- GRanges("TRB", IRanges(0,300000))
+# x <- lolliplot(TRB_gr, features_TRB_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T)
+xaxis_tmp <- c(0,100000,200000,300000)
+names(xaxis_tmp) <- c("105.4Mb","105.5Mb","105.6Mb","105.7Mb")
+x <- lolliplot(TRB_gr, features_TRB_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T, xaxis = xaxis_tmp)
+
+
+TRB_gr$SNPsideID <- "top"
+gr <- GRanges("TRB", IRanges(300000,600000))
+# x <- lolliplot(TRB_gr, features_TRB_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T)
+xaxis_tmp <- c(300000,400000,500000,600000)
+names(xaxis_tmp) <- c("105.7Mb","105.8Mb","105.9Mb","106Mb")
+x <- lolliplot(TRB_gr, features_TRB_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T, xaxis = xaxis_tmp)
+
+
+TRB_gr$SNPsideID <- "top"
+gr <- GRanges("TRB", IRanges(600000,900000))
+# x <- lolliplot(TRB_gr, features_TRB_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T)
+xaxis_tmp <- c(600000,700000,800000,900000)
+names(xaxis_tmp) <- c("106Mb","106.1Mb","106.2Mb","106.3Mb")
+x <- lolliplot(TRB_gr, features_TRB_mul, ranges = gr, cex = 0.6, yaxis = F, ylab = T, xaxis = xaxis_tmp)
+```
